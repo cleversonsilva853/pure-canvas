@@ -24,11 +24,12 @@ import { useState } from 'react';
 const navItems = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/transactions', icon: ArrowUpDown, label: 'Transações' },
+  { to: '/categories', icon: Tag, label: 'Categorias' },
   { to: '/accounts', icon: Landmark, label: 'Contas' },
   { to: '/credit-cards', icon: CreditCard, label: 'Cartões' },
   { to: '/budgets', icon: PieChart, label: 'Orçamentos' },
   { to: '/goals', icon: Target, label: 'Metas' },
-  { to: '/reports', icon: PieChart, label: 'Relatórios' },
+  { to: '/reports', icon: BarChart3, label: 'Relatórios' },
 ];
 
 const AppSidebar = () => {
