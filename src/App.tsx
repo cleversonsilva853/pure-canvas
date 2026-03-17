@@ -14,6 +14,7 @@ import CreditCards from "@/pages/CreditCards";
 import Budgets from "@/pages/Budgets";
 import Goals from "@/pages/Goals";
 import Reports from "@/pages/Reports";
+import Categories from "@/pages/Categories";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
