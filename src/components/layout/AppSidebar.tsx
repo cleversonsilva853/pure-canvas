@@ -8,13 +8,14 @@ import {
   Landmark,
   Target,
   PieChart,
-  Settings,
+  Tag,
   LogOut,
   Sun,
   Moon,
   Wallet,
   ChevronLeft,
   Menu,
+  BarChart3,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
