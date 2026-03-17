@@ -14,6 +14,7 @@ import CreditCards from "@/pages/CreditCards";
 import Budgets from "@/pages/Budgets";
 import Goals from "@/pages/Goals";
 import Reports from "@/pages/Reports";
+import Categories from "@/pages/Categories";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -52,6 +53,7 @@ const App = () => (
                 <Route path="budgets" element={<Budgets />} />
                 <Route path="goals" element={<Goals />} />
                 <Route path="reports" element={<Reports />} />
+                <Route path="categories" element={<Categories />} />
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>
