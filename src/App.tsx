@@ -16,6 +16,11 @@ import Goals from "@/pages/Goals";
 import Reports from "@/pages/Reports";
 import Categories from "@/pages/Categories";
 import NotFound from "@/pages/NotFound";
+import BusinessDashboard from "@/pages/BusinessDashboard";
+import BusinessExpenses from "@/pages/BusinessExpenses";
+import BusinessSales from "@/pages/BusinessSales";
+import BusinessProducts from "@/pages/BusinessProducts";
+import FoodPricing from "@/pages/FoodPricing";
 
 const queryClient = new QueryClient();
 

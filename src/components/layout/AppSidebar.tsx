@@ -105,6 +105,28 @@ const AppSidebar = () => {
               {!collapsed && label}
             </NavLink>
           ))}
+
+          {/* Separator */}
+          <div className="my-3 border-t border-border" />
+          {!collapsed && <p className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Empresa</p>}
+
+          {businessNavItems.map(({ to, icon: Icon, label }) => (
+            <NavLink
+              key={to}
+              to={to}
+              onClick={() => setMobileOpen(false)}
+              className={cn(
+                'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors',
+                location.pathname === to
+                  ? 'bg-primary text-primary-foreground shadow-sm'
+                  : 'text-muted-foreground hover:bg-secondary hover:text-foreground',
+                collapsed && 'justify-center px-0'
+              )}
+            >
+              <Icon className="h-5 w-5 shrink-0" />
+              {!collapsed && label}
+            </NavLink>
+          ))}
         </nav>
 
         {/* Bottom */}
