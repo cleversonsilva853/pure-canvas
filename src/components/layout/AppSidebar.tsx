@@ -37,6 +37,14 @@ const navItems = [
   { to: '/reports', icon: BarChart3, label: 'Relatórios' },
 ];
 
+const businessNavItems = [
+  { to: '/business', icon: Building2, label: 'Painel Empresa' },
+  { to: '/business/expenses', icon: Receipt, label: 'Despesas' },
+  { to: '/business/sales', icon: ShoppingCart, label: 'Vendas' },
+  { to: '/business/products', icon: Package, label: 'Produtos' },
+  { to: '/business/food-pricing', icon: UtensilsCrossed, label: 'Precificação' },
+];
+
 const AppSidebar = () => {
   const { signOut, user } = useAuth();
   const { theme, toggleTheme } = useTheme();
