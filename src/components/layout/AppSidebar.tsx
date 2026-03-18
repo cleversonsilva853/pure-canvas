@@ -16,6 +16,11 @@ import {
   ChevronLeft,
   Menu,
   BarChart3,
+  Building2,
+  Receipt,
+  ShoppingCart,
+  Package,
+  UtensilsCrossed,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
