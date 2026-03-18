@@ -16,6 +16,11 @@ import Goals from "@/pages/Goals";
 import Reports from "@/pages/Reports";
 import Categories from "@/pages/Categories";
 import NotFound from "@/pages/NotFound";
+import BusinessDashboard from "@/pages/BusinessDashboard";
+import BusinessExpenses from "@/pages/BusinessExpenses";
+import BusinessSales from "@/pages/BusinessSales";
+import BusinessProducts from "@/pages/BusinessProducts";
+import FoodPricing from "@/pages/FoodPricing";
 
 const queryClient = new QueryClient();
 
@@ -54,6 +59,11 @@ const App = () => (
                 <Route path="goals" element={<Goals />} />
                 <Route path="reports" element={<Reports />} />
                 <Route path="categories" element={<Categories />} />
+                <Route path="business" element={<BusinessDashboard />} />
+                <Route path="business/expenses" element={<BusinessExpenses />} />
+                <Route path="business/sales" element={<BusinessSales />} />
+                <Route path="business/products" element={<BusinessProducts />} />
+                <Route path="business/food-pricing" element={<FoodPricing />} />
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>
