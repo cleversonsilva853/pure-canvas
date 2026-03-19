@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
+import { AppModeProvider } from "@/contexts/AppModeContext";
 import AppLayout from "@/components/layout/AppLayout";
 import Auth from "@/pages/Auth";
 import Index from "@/pages/Index";
@@ -21,6 +22,9 @@ import BusinessExpenses from "@/pages/BusinessExpenses";
 import BusinessSales from "@/pages/BusinessSales";
 import BusinessProducts from "@/pages/BusinessProducts";
 import FoodPricing from "@/pages/FoodPricing";
+import CoupleDashboard from "@/pages/CoupleDashboard";
+import CoupleTransactions from "@/pages/CoupleTransactions";
+import CoupleInvite from "@/pages/CoupleInvite";
 
 const queryClient = new QueryClient();
 
@@ -44,31 +48,36 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider>
       <AuthProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <Routes>
-              <Route path="/auth" element={<AuthRoute />} />
-              <Route path="/" element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
-                <Route index element={<Index />} />
-                <Route path="transactions" element={<Transactions />} />
-                <Route path="accounts" element={<Accounts />} />
-                <Route path="credit-cards" element={<CreditCards />} />
-                <Route path="budgets" element={<Budgets />} />
-                <Route path="goals" element={<Goals />} />
-                <Route path="reports" element={<Reports />} />
-                <Route path="categories" element={<Categories />} />
-                <Route path="business" element={<BusinessDashboard />} />
-                <Route path="business/expenses" element={<BusinessExpenses />} />
-                <Route path="business/sales" element={<BusinessSales />} />
-                <Route path="business/products" element={<BusinessProducts />} />
-                <Route path="business/food-pricing" element={<FoodPricing />} />
-              </Route>
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-        </TooltipProvider>
+        <AppModeProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <Routes>
+                <Route path="/auth" element={<AuthRoute />} />
+                <Route path="/" element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
+                  <Route index element={<Index />} />
+                  <Route path="transactions" element={<Transactions />} />
+                  <Route path="accounts" element={<Accounts />} />
+                  <Route path="credit-cards" element={<CreditCards />} />
+                  <Route path="budgets" element={<Budgets />} />
+                  <Route path="goals" element={<Goals />} />
+                  <Route path="reports" element={<Reports />} />
+                  <Route path="categories" element={<Categories />} />
+                  <Route path="business" element={<BusinessDashboard />} />
+                  <Route path="business/expenses" element={<BusinessExpenses />} />
+                  <Route path="business/sales" element={<BusinessSales />} />
+                  <Route path="business/products" element={<BusinessProducts />} />
+                  <Route path="business/food-pricing" element={<FoodPricing />} />
+                  <Route path="couple" element={<CoupleDashboard />} />
+                  <Route path="couple/transactions" element={<CoupleTransactions />} />
+                  <Route path="couple/invite" element={<CoupleInvite />} />
+                </Route>
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </BrowserRouter>
+          </TooltipProvider>
+        </AppModeProvider>
       </AuthProvider>
     </ThemeProvider>
   </QueryClientProvider>
