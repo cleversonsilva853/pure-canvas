@@ -1,6 +1,7 @@
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useAppMode } from '@/contexts/AppModeContext';
 import {
   LayoutDashboard,
   ArrowUpDown,
@@ -21,12 +22,15 @@ import {
   ShoppingCart,
   Package,
   UtensilsCrossed,
+  Heart,
+  Users,
+  ArrowRightLeft,
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import ModeSelector from '@/components/ModeSelector';
 
-const navItems = [
+const personalNavItems = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/transactions', icon: ArrowUpDown, label: 'Transações' },
   { to: '/categories', icon: Tag, label: 'Categorias' },
@@ -45,12 +49,26 @@ const businessNavItems = [
   { to: '/business/food-pricing', icon: UtensilsCrossed, label: 'Precificação' },
 ];
 
+const coupleNavItems = [
+  { to: '/couple', icon: Heart, label: 'Dashboard Casal' },
+  { to: '/couple/transactions', icon: ArrowUpDown, label: 'Transações' },
+  { to: '/couple/invite', icon: Users, label: 'Vincular Parceiro' },
+];
+
 const AppSidebar = () => {
   const { signOut, user } = useAuth();
   const { theme, toggleTheme } = useTheme();
+  const { mode } = useAppMode();
   const location = useLocation();
+  const navigate = useNavigate();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  const navItems = mode === 'personal' ? personalNavItems
+    : mode === 'business' ? businessNavItems
+    : coupleNavItems;
+
+  const modeLabel = mode === 'personal' ? 'Pessoal' : mode === 'business' ? 'Empresa' : 'Casal';
 
   return (
     <>
@@ -64,20 +82,15 @@ const AppSidebar = () => {
 
       {/* Overlay */}
       {mobileOpen && (
-        <div
-          className="fixed inset-0 bg-foreground/20 backdrop-blur-sm z-40 md:hidden"
-          onClick={() => setMobileOpen(false)}
-        />
+        <div className="fixed inset-0 bg-foreground/20 backdrop-blur-sm z-40 md:hidden" onClick={() => setMobileOpen(false)} />
       )}
 
       {/* Sidebar */}
-      <aside
-        className={cn(
-          'fixed top-0 left-0 h-full bg-card border-r border-border z-50 flex flex-col transition-all duration-300',
-          collapsed ? 'w-[72px]' : 'w-64',
-          mobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
-        )}
-      >
+      <aside className={cn(
+        'fixed top-0 left-0 h-full bg-card border-r border-border z-50 flex flex-col transition-all duration-300',
+        collapsed ? 'w-[72px]' : 'w-64',
+        mobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
+      )}>
         {/* Logo */}
         <div className={cn('flex items-center gap-3 p-4 border-b border-border', collapsed && 'justify-center')}>
           <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-primary/10 shrink-0">
@@ -86,8 +99,18 @@ const AppSidebar = () => {
           {!collapsed && <span className="font-bold text-lg tracking-tight">FinControl</span>}
         </div>
 
+        {/* Mode Selector */}
+        {!collapsed && (
+          <div className="px-3 pt-3">
+            <ModeSelector />
+          </div>
+        )}
+
         {/* Nav */}
         <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
+          {!collapsed && (
+            <p className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">{modeLabel}</p>
+          )}
           {navItems.map(({ to, icon: Icon, label }) => (
             <NavLink
               key={to}
@@ -96,29 +119,9 @@ const AppSidebar = () => {
               className={cn(
                 'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors',
                 location.pathname === to
-                  ? 'bg-primary text-primary-foreground shadow-sm'
-                  : 'text-muted-foreground hover:bg-secondary hover:text-foreground',
-                collapsed && 'justify-center px-0'
-              )}
-            >
-              <Icon className="h-5 w-5 shrink-0" />
-              {!collapsed && label}
-            </NavLink>
-          ))}
-
-          {/* Separator */}
-          <div className="my-3 border-t border-border" />
-          {!collapsed && <p className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Empresa</p>}
-
-          {businessNavItems.map(({ to, icon: Icon, label }) => (
-            <NavLink
-              key={to}
-              to={to}
-              onClick={() => setMobileOpen(false)}
-              className={cn(
-                'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors',
-                location.pathname === to
-                  ? 'bg-primary text-primary-foreground shadow-sm'
+                  ? mode === 'couple'
+                    ? 'bg-[hsl(330,80%,55%)] text-white shadow-sm'
+                    : 'bg-primary text-primary-foreground shadow-sm'
                   : 'text-muted-foreground hover:bg-secondary hover:text-foreground',
                 collapsed && 'justify-center px-0'
               )}
@@ -151,8 +154,6 @@ const AppSidebar = () => {
             <LogOut className="h-5 w-5 shrink-0" />
             {!collapsed && 'Sair'}
           </button>
-
-          {/* Collapse button - desktop only */}
           <button
             onClick={() => setCollapsed(!collapsed)}
             className="hidden md:flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-muted-foreground hover:bg-secondary hover:text-foreground w-full transition-colors justify-center"

@@ -284,6 +284,164 @@ export type Database = {
           },
         ]
       }
+      couple_invites: {
+        Row: {
+          created_at: string
+          id: string
+          invite_code: string
+          invitee_email: string | null
+          inviter_id: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          invite_code?: string
+          invitee_email?: string | null
+          inviter_id: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          invite_code?: string
+          invitee_email?: string | null
+          inviter_id?: string
+          status?: string
+        }
+        Relationships: []
+      }
+      couple_transactions: {
+        Row: {
+          amount: number
+          category: string | null
+          couple_id: string
+          created_at: string
+          date: string
+          description: string | null
+          expense_type: string
+          id: string
+          paid_by: string
+          split_percentage: number
+          split_type: string
+          type: string
+          wallet_id: string | null
+        }
+        Insert: {
+          amount: number
+          category?: string | null
+          couple_id: string
+          created_at?: string
+          date?: string
+          description?: string | null
+          expense_type?: string
+          id?: string
+          paid_by: string
+          split_percentage?: number
+          split_type?: string
+          type?: string
+          wallet_id?: string | null
+        }
+        Update: {
+          amount?: number
+          category?: string | null
+          couple_id?: string
+          created_at?: string
+          date?: string
+          description?: string | null
+          expense_type?: string
+          id?: string
+          paid_by?: string
+          split_percentage?: number
+          split_type?: string
+          type?: string
+          wallet_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "couple_transactions_couple_id_fkey"
+            columns: ["couple_id"]
+            isOneToOne: false
+            referencedRelation: "couples"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "couple_transactions_wallet_id_fkey"
+            columns: ["wallet_id"]
+            isOneToOne: false
+            referencedRelation: "couple_wallets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      couple_wallets: {
+        Row: {
+          balance: number
+          color: string | null
+          couple_id: string
+          created_at: string
+          id: string
+          name: string
+          owner_id: string | null
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          balance?: number
+          color?: string | null
+          couple_id: string
+          created_at?: string
+          id?: string
+          name: string
+          owner_id?: string | null
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          balance?: number
+          color?: string | null
+          couple_id?: string
+          created_at?: string
+          id?: string
+          name?: string
+          owner_id?: string | null
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "couple_wallets_couple_id_fkey"
+            columns: ["couple_id"]
+            isOneToOne: false
+            referencedRelation: "couples"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      couples: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          user1_id: string
+          user2_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name?: string
+          user1_id: string
+          user2_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          user1_id?: string
+          user2_id?: string
+        }
+        Relationships: []
+      }
       credit_cards: {
         Row: {
           closing_day: number
@@ -486,7 +644,11 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_user_couple_id: { Args: { _user_id: string }; Returns: string }
+      is_couple_member: {
+        Args: { _couple_id: string; _user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never
