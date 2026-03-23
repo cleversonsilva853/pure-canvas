@@ -7,6 +7,8 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AppModeProvider } from "@/contexts/AppModeContext";
 import AppLayout from "@/components/layout/AppLayout";
+import PWAInstallPrompt from "@/components/PWAInstallPrompt";
+import PWAUpdatePrompt from "@/components/PWAUpdatePrompt";
 import Auth from "@/pages/Auth";
 import Index from "@/pages/Index";
 import Transactions from "@/pages/Transactions";
