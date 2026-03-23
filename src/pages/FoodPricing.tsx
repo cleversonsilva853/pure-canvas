@@ -99,7 +99,7 @@ const FoodPricing = () => {
     const payload = {
       name: finalName,
       total_quantity: Number(form.total_quantity),
-      unit: mode === 'combo' ? 'un' : form.unit,
+      unit: form.unit,
       total_cost: currentTotalCost,
       portion_quantity: mode === 'combo' ? Number(form.portion_quantity) : Number(form.total_quantity),
       profit_percentage: mode === 'combo' ? margin : 0,
@@ -218,9 +218,9 @@ const FoodPricing = () => {
               )}
 
               <div className="grid grid-cols-2 gap-4">
-                <div><Label>Quantidade Total</Label><Input required type="number" step="0.01" min="0" value={form.total_quantity} onChange={e => setForm(f => ({ ...f, total_quantity: e.target.value }))} /></div>
+                <div><Label>{mode === 'combo' ? 'Rendimento Total' : 'Quantidade Total'}</Label><Input required type="number" step="0.01" min="0" value={form.total_quantity} onChange={e => setForm(f => ({ ...f, total_quantity: e.target.value }))} /></div>
                 <div><Label>Unidade</Label>
-                  <Select value={form.unit} disabled={mode === 'combo'} onValueChange={v => setForm(f => ({ ...f, unit: v }))}>
+                  <Select value={form.unit} onValueChange={v => setForm(f => ({ ...f, unit: v }))}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="un">Unidade (un)</SelectItem>
@@ -232,13 +232,13 @@ const FoodPricing = () => {
                   </Select>
                 </div>
               </div>
-              <div><Label>Custo Total (R$)</Label><Input required type="number" step="0.01" min="0" value={mode === 'combo' ? calculatedComboCost.toFixed(2) : form.total_cost} readOnly={mode === 'combo'} onChange={e => setForm(f => ({ ...f, total_cost: e.target.value }))} className={mode === 'combo' ? 'bg-muted opacity-80' : ''} /></div>
+              <div><Label>Custo {mode === 'combo' ? 'da Composição' : 'Total'} (R$)</Label><Input required type="number" step="0.01" min="0" value={mode === 'combo' ? calculatedComboCost.toFixed(2) : form.total_cost} readOnly={mode === 'combo'} onChange={e => setForm(f => ({ ...f, total_cost: e.target.value }))} className={mode === 'combo' ? 'bg-muted opacity-80' : ''} /></div>
               
               {mode === 'combo' && (
                 <>
-                  <div><Label>Quantidade por Porção (un)</Label><Input required type="number" step="0.01" min="0" value={form.portion_quantity} onChange={e => setForm(f => ({ ...f, portion_quantity: e.target.value }))} /></div>
+                  <div><Label>Quantidade por Porção Vendida ({form.unit})</Label><Input required type="number" step="0.01" min="0" value={form.portion_quantity} onChange={e => setForm(f => ({ ...f, portion_quantity: e.target.value }))} /></div>
                   <div>
-                    <Label>Preço de Venda Desejado (R$)</Label>
+                    <Label>Preço de Venda da Porção (R$)</Label>
                     <Input required type="number" step="0.01" min="0" value={form.sale_price} onChange={e => setForm(f => ({ ...f, sale_price: e.target.value }))} />
                     <p className="text-[10px] text-muted-foreground mt-1 px-1">
                       Margem de lucro de <strong>{currentMargin.toFixed(1)}%</strong> sobre o valor de venda.
