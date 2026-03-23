@@ -201,6 +201,23 @@ export const useCreateFoodPricing = () => {
   });
 };
 
+export const useUpdateFoodPricing = () => {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: async (values: { id: string; name: string; total_quantity: number; unit: string; total_cost: number; portion_quantity: number; profit_percentage: number }) => {
+      const { id, ...updateValues } = values;
+      const { error } = await supabase.from('business_food_pricing').update(updateValues).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['business_food_pricing'] });
+      toast({ title: 'Item atualizado!' });
+    },
+    onError: () => toast({ title: 'Erro ao atualizar item', variant: 'destructive' }),
+  });
+};
+
 export const useDeleteFoodPricing = () => {
   const qc = useQueryClient();
   const { toast } = useToast();

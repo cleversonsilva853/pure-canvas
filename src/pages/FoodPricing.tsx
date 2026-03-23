@@ -6,8 +6,8 @@ import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useFoodPricing, useCreateFoodPricing, useDeleteFoodPricing } from '@/hooks/useBusinessData';
-import { Plus, Trash2, Calculator, Check, ChevronsUpDown } from 'lucide-react';
+import { useFoodPricing, useCreateFoodPricing, useUpdateFoodPricing, useDeleteFoodPricing } from '@/hooks/useBusinessData';
+import { Plus, Trash2, Calculator, Check, ChevronsUpDown, Pencil } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { cn } from '@/lib/utils';
@@ -17,8 +17,10 @@ const fmt = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', c
 const FoodPricing = () => {
   const { data: items = [], isLoading } = useFoodPricing();
   const createItem = useCreateFoodPricing();
+  const updateItem = useUpdateFoodPricing();
   const deleteItem = useDeleteFoodPricing();
   const [open, setOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [mode, setMode] = useState<'simple' | 'combo'>('simple');
   const [form, setForm] = useState({ name: '', total_quantity: '1000', unit: 'g', total_cost: '', portion_quantity: '100', sale_price: '' });
   const [selectedIngredients, setSelectedIngredients] = useState<{ id: string, quantity: string }[]>([]);
@@ -64,25 +66,55 @@ const FoodPricing = () => {
     setSelectedIngredients(newIngs);
   };
 
+  const handleEdit = (item: any) => {
+    setEditingId(item.id);
+    const isCombo = item.name.startsWith('🛒 ');
+    setMode(isCombo ? 'combo' : 'simple');
+    setForm({
+      name: isCombo ? item.name.replace('🛒 ', '') : item.name,
+      total_quantity: String(item.total_quantity),
+      unit: item.unit,
+      total_cost: String(item.total_cost),
+      portion_quantity: String(item.portion_quantity),
+      sale_price: String(item.profit_percentage > 0 ? (Number(item.total_cost) / Number(item.total_quantity) * Number(item.portion_quantity)) / (1 - Number(item.profit_percentage) / 100) : ''),
+    });
+    // Note: selectedIngredients can't be restored because they aren't saved in the DB
+    setSelectedIngredients([]); 
+    setOpen(true);
+  };
+
+  const handleNew = () => {
+    setEditingId(null);
+    setMode('simple');
+    setForm({ name: '', total_quantity: '1000', unit: 'g', total_cost: '', portion_quantity: '100', sale_price: '' });
+    setSelectedIngredients([]);
+    setOpen(true);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const margin = currentSalePrice > 0 ? (profitPerUnit / currentSalePrice) * 100 : 0;
     
-    // For combos, the "name" can include a visual indicator
     const finalName = mode === 'combo' ? `🛒 ${form.name}` : form.name;
-
-    await createItem.mutateAsync({
+    const payload = {
       name: finalName,
       total_quantity: Number(form.total_quantity),
       unit: mode === 'combo' ? 'un' : form.unit,
       total_cost: currentTotalCost,
       portion_quantity: mode === 'combo' ? Number(form.portion_quantity) : Number(form.total_quantity),
       profit_percentage: mode === 'combo' ? margin : 0,
-    });
+    };
+
+    if (editingId) {
+      await updateItem.mutateAsync({ id: editingId, ...payload });
+    } else {
+      await createItem.mutateAsync(payload);
+    }
     
     setForm({ name: '', total_quantity: '1000', unit: 'g', total_cost: '', portion_quantity: '100', sale_price: '' });
     setSelectedIngredients([]);
     setMode('simple');
+    setEditingId(null);
     setOpen(false);
   };
 
@@ -91,9 +123,9 @@ const FoodPricing = () => {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Precificação Food</h1>
         <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-2" />Novo Item</Button></DialogTrigger>
+          <Button onClick={handleNew}><Plus className="h-4 w-4 mr-2" />Novo Item</Button>
           <DialogContent className="max-w-lg">
-            <DialogHeader><DialogTitle>Precificação de Produto</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle>{editingId ? 'Editar Item' : 'Precificação de Produto'}</DialogTitle></DialogHeader>
             
             <div className="flex gap-2 p-1 bg-muted rounded-lg mb-4">
               <Button 
@@ -251,7 +283,10 @@ const FoodPricing = () => {
                       <div className="text-center"><p className="text-muted-foreground text-xs">Preço Venda</p><p className="font-bold text-primary">{fmt(c.salePrice)}</p></div>
                       <div className="text-center"><p className="text-muted-foreground text-xs">Lucro/Un.</p><p className="font-semibold text-emerald-600">{fmt(c.profitPerUnit)}</p></div>
                       <div className="text-center"><p className="text-muted-foreground text-xs">Margem</p><p className="font-semibold">{Number(item.profit_percentage)}%</p></div>
-                      <Button variant="ghost" size="icon" onClick={() => deleteItem.mutate(item.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                      <div className="flex items-center gap-1">
+                        <Button variant="ghost" size="icon" onClick={() => handleEdit(item)}><Pencil className="h-4 w-4 text-primary" /></Button>
+                        <Button variant="ghost" size="icon" onClick={() => deleteItem.mutate(item.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                      </div>
                     </div>
                   </div>
                 );
