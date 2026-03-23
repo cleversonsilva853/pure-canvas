@@ -21,7 +21,6 @@ import {
   Receipt,
   ShoppingCart,
   Package,
-  UtensilsCrossed,
   Settings as SettingsIcon,
   LineChart,
 } from 'lucide-react';
@@ -46,7 +45,6 @@ const businessNavItems = [
   { to: '/business/expenses', icon: Receipt, label: 'Despesas' },
   { to: '/business/sales', icon: ShoppingCart, label: 'Vendas' },
   { to: '/business/products', icon: Package, label: 'Produtos' },
-  { to: '/business/food-pricing', icon: UtensilsCrossed, label: 'Precificação' },
   { to: '/business/dre', icon: LineChart, label: 'DRE' },
 ];
 

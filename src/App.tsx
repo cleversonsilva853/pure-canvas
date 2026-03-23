@@ -25,7 +25,6 @@ import BusinessExpenses from "@/pages/BusinessExpenses";
 import BusinessSales from "@/pages/BusinessSales";
 import BusinessProducts from "@/pages/BusinessProducts";
 import BusinessDRE from "@/pages/BusinessDRE";
-import FoodPricing from "@/pages/FoodPricing";
 
 const queryClient = new QueryClient();
 
@@ -72,7 +71,6 @@ const App = () => (
                   <Route path="business/expenses" element={<BusinessExpenses />} />
                   <Route path="business/sales" element={<BusinessSales />} />
                   <Route path="business/products" element={<BusinessProducts />} />
-                  <Route path="business/food-pricing" element={<FoodPricing />} />
                   <Route path="business/dre" element={<BusinessDRE />} />
                 </Route>
                 <Route path="*" element={<NotFound />} />
