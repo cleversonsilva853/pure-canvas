@@ -50,7 +50,7 @@ export const useTransactions = (month?: number, year?: number) => {
 
       const { data, error } = await supabase
         .from('transactions')
-        .select('*, category:categories(*), account:accounts(*)')
+        .select('*, category:categories(*), account:accounts(*), card:credit_cards(*)')
         .gte('date', startDate)
         .lt('date', endDate)
         .order('date', { ascending: false });
@@ -86,6 +86,23 @@ export const useGoals = () => {
         .from('goals')
         .select('*')
         .order('created_at', { ascending: true });
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user,
+  });
+};
+
+export const useUnpaidCreditCardTransactions = () => {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: ['transactions', 'unpaid', user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('transactions')
+        .select('*, card:credit_cards(*)')
+        .not('credit_card_id', 'is', null)
+        .eq('is_paid', false);
       if (error) throw error;
       return data;
     },

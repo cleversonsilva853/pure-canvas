@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { useTransactions, useAccounts, useCategories, useBudgets } from '@/hooks/useFinanceData';
+import { useTransactions, useAccounts, useCategories, useBudgets, useCreditCards } from '@/hooks/useFinanceData';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
@@ -27,6 +27,7 @@ const Transactions = () => {
   const { data: accounts = [] } = useAccounts();
   const { data: categories = [] } = useCategories();
   const { data: budgets = [] } = useBudgets();
+  const { data: creditCards = [] } = useCreditCards();
 
   // Form state
   const [type, setType] = useState<string>('expense');
@@ -35,6 +36,7 @@ const Transactions = () => {
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [categoryId, setCategoryId] = useState('');
   const [accountId, setAccountId] = useState('');
+  const [creditCardId, setCreditCardId] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -68,11 +70,13 @@ const Transactions = () => {
         date,
         category_id: categoryId || null,
         account_id: accountId || null,
+        credit_card_id: creditCardId && creditCardId !== 'none' ? creditCardId : null,
+        is_paid: !creditCardId || creditCardId === 'none',
       });
       if (error) throw error;
 
-      // Update account balance
-      if (accountId) {
+      // Update account balance only if NOT using credit card
+      if (accountId && !creditCardId) {
         const account = accounts.find(a => a.id === accountId);
         if (account) {
           const newBalance = type === 'income'
@@ -111,6 +115,7 @@ const Transactions = () => {
     setDate(new Date().toISOString().split('T')[0]);
     setCategoryId('');
     setAccountId('');
+    setCreditCardId('');
   };
 
   const filtered = transactions.filter((t) => {
@@ -192,7 +197,7 @@ const Transactions = () => {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Conta</Label>
+                <Label>Conta {type === 'expense' && '(Opcional se usar cartão)'}</Label>
                 <Select value={accountId} onValueChange={setAccountId}>
                   <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                   <SelectContent>
@@ -202,6 +207,24 @@ const Transactions = () => {
                   </SelectContent>
                 </Select>
               </div>
+
+              {type === 'expense' && (
+                <div className="space-y-2">
+                  <Label>Cartão de Crédito (Opcional)</Label>
+                  <Select value={creditCardId} onValueChange={setCreditCardId}>
+                    <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Nenhum</SelectItem>
+                      {creditCards.map((c) => (
+                        <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-[10px] text-muted-foreground mt-1">
+                    Ao usar cartão, o saldo da conta não será descontado agora.
+                  </p>
+                </div>
+              )}
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? 'Salvando...' : 'Salvar'}
               </Button>
@@ -267,6 +290,7 @@ const Transactions = () => {
                         {new Date(t.date).toLocaleDateString('pt-BR')}
                         {(t.category as any)?.name ? ` • ${(t.category as any).name}` : ''}
                         {(t.account as any)?.name ? ` • ${(t.account as any).name}` : ''}
+                        {(t as any).card?.name ? ` • 💳 ${(t as any).card.name}` : ''}
                       </p>
                     </div>
                   </div>
