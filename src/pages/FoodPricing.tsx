@@ -221,21 +221,26 @@ const FoodPricing = () => {
                               </PopoverContent>
                             </Popover>
                           </div>
-                          <div className="col-span-2 relative group">
+                          <div className="col-span-2 relative group flex flex-col items-center">
                             <Input 
                               placeholder="Qtd" 
                               className="h-8 text-xs pr-7" 
                               value={ing.quantity} 
                               onChange={e => updateIngredient(idx, 'quantity', e.target.value)} 
                             />
-                            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] text-muted-foreground font-medium uppercase">
+                            <span className="absolute right-2 top-[16px] -translate-y-1/2 text-[9px] text-muted-foreground font-medium uppercase">
                               {selectedItem?.unit || '---'}
                             </span>
-                            {selectedItem && ing.quantity && (
-                              <div className="absolute -bottom-4 left-0 right-0 text-center">
-                                <span className="text-[9px] font-bold text-emerald-600">
-                                  {fmt((Number(selectedItem.total_cost) / Number(selectedItem.total_quantity)) * Number(ing.quantity))}
+                            {selectedItem && (
+                              <div className="flex flex-col items-center mt-1 -space-y-0.5">
+                                <span className="text-[8px] text-muted-foreground leading-none">
+                                  Un: {fmt(Number(selectedItem.total_cost) / Number(selectedItem.total_quantity))}
                                 </span>
+                                {ing.quantity && (
+                                  <span className="text-[9px] font-bold text-emerald-600 leading-none">
+                                    Sub: {fmt((Number(selectedItem.total_cost) / Number(selectedItem.total_quantity)) * Number(ing.quantity))}
+                                  </span>
+                                )}
                               </div>
                             )}
                           </div>
