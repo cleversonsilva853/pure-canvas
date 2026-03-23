@@ -99,9 +99,9 @@ const FoodPricing = () => {
     const payload = {
       name: finalName,
       total_quantity: mode === 'combo' ? 1 : Number(form.total_quantity),
-      unit: mode === 'combo' ? 'un' : form.unit,
+      unit: form.unit,
       total_cost: currentTotalCost,
-      portion_quantity: mode === 'combo' ? 1 : Number(form.total_quantity),
+      portion_quantity: mode === 'combo' ? Number(form.portion_quantity) : Number(form.total_quantity),
       profit_percentage: mode === 'combo' ? margin : 0,
     };
 
@@ -146,18 +146,24 @@ const FoodPricing = () => {
               <div><Label>{mode === 'combo' ? 'Nome do Combo' : 'Nome do Produto'}</Label><Input required value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} /></div>
               
               {mode === 'combo' && (
-                <div>
-                  <Label>Forma de Venda</Label>
-                  <Select value={form.unit} onValueChange={v => setForm(f => ({ ...f, unit: v }))}>
-                    <SelectTrigger><SelectValue placeholder="Selecione a forma de venda..." /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="un">Unidade (un)</SelectItem>
-                      <SelectItem value="kg">Quilos (kg)</SelectItem>
-                      <SelectItem value="g">Gramas (g)</SelectItem>
-                      <SelectItem value="L">Litros (L)</SelectItem>
-                      <SelectItem value="ml">Mililitros (ml)</SelectItem>
-                    </SelectContent>
-                  </Select>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Quantidade Vendida</Label>
+                    <Input required type="number" step="0.01" min="0" value={form.portion_quantity} onChange={e => setForm(f => ({ ...f, portion_quantity: e.target.value }))} />
+                  </div>
+                  <div>
+                    <Label>Unidade de Venda</Label>
+                    <Select value={form.unit} onValueChange={v => setForm(f => ({ ...f, unit: v }))}>
+                      <SelectTrigger><SelectValue placeholder="Unidade" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="un">Unidade (un)</SelectItem>
+                        <SelectItem value="kg">Quilos (kg)</SelectItem>
+                        <SelectItem value="g">Gramas (g)</SelectItem>
+                        <SelectItem value="L">Litros (L)</SelectItem>
+                        <SelectItem value="ml">Mililitros (ml)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
               )}
               
@@ -269,7 +275,6 @@ const FoodPricing = () => {
               {mode === 'combo' && (
                 <div className="opacity-0 h-0 overflow-hidden pointer-events-none">
                   <Input value="1" readOnly />
-                  <Input value="" readOnly />
                 </div>
               )}
 
