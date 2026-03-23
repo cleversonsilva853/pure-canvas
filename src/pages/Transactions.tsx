@@ -5,12 +5,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { useTransactions, useAccounts, useCategories, useGoals } from '@/hooks/useFinanceData';
+import { useTransactions, useAccounts, useCategories } from '@/hooks/useFinanceData';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { Plus, TrendingUp, TrendingDown, Search, Filter, Trash2, Target } from 'lucide-react';
+import { Plus, TrendingUp, TrendingDown, Search, Filter, Trash2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const formatCurrency = (value: number) =>
@@ -26,7 +26,6 @@ const Transactions = () => {
   const { data: transactions = [], isLoading } = useTransactions();
   const { data: accounts = [] } = useAccounts();
   const { data: categories = [] } = useCategories();
-  const { data: goals = [] } = useGoals();
 
   // Form state
   const [type, setType] = useState<string>('expense');
@@ -35,7 +34,6 @@ const Transactions = () => {
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [categoryId, setCategoryId] = useState('');
   const [accountId, setAccountId] = useState('');
-  const [goalId, setGoalId] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -52,7 +50,6 @@ const Transactions = () => {
         date,
         category_id: categoryId || null,
         account_id: accountId || null,
-        goal_id: type === 'income' ? (goalId || null) : null,
       });
       if (error) throw error;
 
@@ -64,16 +61,6 @@ const Transactions = () => {
             ? Number(account.balance) + parseFloat(amount)
             : Number(account.balance) - parseFloat(amount);
           await supabase.from('accounts').update({ balance: newBalance }).eq('id', accountId);
-        }
-      }
-
-      // Update goal balance if linked
-      if (type === 'income' && goalId) {
-        const goal = goals.find(g => g.id === goalId);
-        if (goal) {
-          const newCurrentAmount = Number(goal.current_amount) + parseFloat(amount);
-          await supabase.from('goals').update({ current_amount: newCurrentAmount }).eq('id', goalId);
-          queryClient.invalidateQueries({ queryKey: ['goals'] });
         }
       }
 
@@ -106,7 +93,6 @@ const Transactions = () => {
     setDate(new Date().toISOString().split('T')[0]);
     setCategoryId('');
     setAccountId('');
-    setGoalId('');
   };
 
   const filtered = transactions.filter((t) => {
@@ -198,22 +184,6 @@ const Transactions = () => {
                   </SelectContent>
                 </Select>
               </div>
-              {type === 'income' && (
-                <div className="space-y-2">
-                  <Label>Vincular à Meta (Opcional)</Label>
-                  <Select value={goalId} onValueChange={setGoalId}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione uma meta" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">Nenhuma</SelectItem>
-                      {goals.map((g) => (
-                        <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? 'Salvando...' : 'Salvar'}
               </Button>
@@ -279,12 +249,6 @@ const Transactions = () => {
                         {new Date(t.date).toLocaleDateString('pt-BR')}
                         {(t.category as any)?.name ? ` • ${(t.category as any).name}` : ''}
                         {(t.account as any)?.name ? ` • ${(t.account as any).name}` : ''}
-                        {(t.goal as any)?.name && (
-                          <span className="flex items-center gap-1 mt-0.5 text-accent">
-                            <Target className="h-3 w-3" />
-                            {(t.goal as any).name}
-                          </span>
-                        )}
                       </p>
                     </div>
                   </div>
