@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { useTransactions, useAccounts, useCategories } from '@/hooks/useFinanceData';
+import { useTransactions, useAccounts, useCategories, useBudgets } from '@/hooks/useFinanceData';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
@@ -26,6 +26,7 @@ const Transactions = () => {
   const { data: transactions = [], isLoading } = useTransactions();
   const { data: accounts = [] } = useAccounts();
   const { data: categories = [] } = useCategories();
+  const { data: budgets = [] } = useBudgets();
 
   // Form state
   const [type, setType] = useState<string>('expense');
@@ -39,6 +40,23 @@ const Transactions = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
+
+    // Check budget if it's an expense
+    if (type === 'expense' && categoryId) {
+      const budget = budgets.find(b => b.category_id === categoryId);
+      if (budget) {
+        const spent = transactions
+          .filter(t => t.type === 'expense' && t.category_id === categoryId)
+          .reduce((sum, t) => sum + Number(t.amount), 0);
+        
+        const totalWithNew = spent + parseFloat(amount);
+        if (totalWithNew > Number(budget.amount)) {
+          const confirm = window.confirm('Fora do seu Orçamento tem certeza disso?');
+          if (!confirm) return;
+        }
+      }
+    }
+
     setLoading(true);
 
     try {
