@@ -76,8 +76,8 @@ const FoodPricing = () => {
       total_quantity: Number(form.total_quantity),
       unit: mode === 'combo' ? 'un' : form.unit,
       total_cost: currentTotalCost,
-      portion_quantity: Number(form.portion_quantity),
-      profit_percentage: margin,
+      portion_quantity: mode === 'combo' ? Number(form.portion_quantity) : Number(form.total_quantity),
+      profit_percentage: mode === 'combo' ? margin : 0,
     });
     
     setForm({ name: '', total_quantity: '1000', unit: 'g', total_cost: '', portion_quantity: '100', sale_price: '' });
@@ -198,24 +198,29 @@ const FoodPricing = () => {
                 </div>
               </div>
               <div><Label>Custo Total (R$)</Label><Input required type="number" step="0.01" min="0" value={mode === 'combo' ? calculatedComboCost.toFixed(2) : form.total_cost} readOnly={mode === 'combo'} onChange={e => setForm(f => ({ ...f, total_cost: e.target.value }))} className={mode === 'combo' ? 'bg-muted opacity-80' : ''} /></div>
-              <div><Label>Quantidade por Porção ({mode === 'combo' ? 'un' : form.unit})</Label><Input required type="number" step="0.01" min="0" value={form.portion_quantity} onChange={e => setForm(f => ({ ...f, portion_quantity: e.target.value }))} /></div>
-              <div>
-                <Label>Preço de Venda Desejado (R$)</Label>
-                <Input required type="number" step="0.01" min="0" value={form.sale_price} onChange={e => setForm(f => ({ ...f, sale_price: e.target.value }))} />
-                <p className="text-[10px] text-muted-foreground mt-1 px-1">
-                  Margem de lucro de <strong>{currentMargin.toFixed(1)}%</strong> sobre o valor de venda.
-                </p>
-              </div>
-
-              {Number(form.total_cost) > 0 && (
-                <div className="p-4 rounded-xl bg-secondary space-y-2">
-                  <div className="flex items-center gap-2 mb-2"><Calculator className="h-4 w-4 text-primary" /><span className="font-semibold text-sm">Resumo da Precificação</span></div>
-                  <div className="grid grid-cols-2 gap-2 text-sm">
-                    <span className="text-muted-foreground">Custo da porção:</span><span className="font-medium">{fmt(portionCost)}</span>
-                    <span className="text-muted-foreground">Lucro p/ porção:</span><span className="font-medium text-emerald-600">{fmt(profitPerUnit)}</span>
-                    <span className="text-muted-foreground">Margem Final:</span><span className="font-bold text-primary">{currentMargin.toFixed(1)}%</span>
+              
+              {mode === 'combo' && (
+                <>
+                  <div><Label>Quantidade por Porção (un)</Label><Input required type="number" step="0.01" min="0" value={form.portion_quantity} onChange={e => setForm(f => ({ ...f, portion_quantity: e.target.value }))} /></div>
+                  <div>
+                    <Label>Preço de Venda Desejado (R$)</Label>
+                    <Input required type="number" step="0.01" min="0" value={form.sale_price} onChange={e => setForm(f => ({ ...f, sale_price: e.target.value }))} />
+                    <p className="text-[10px] text-muted-foreground mt-1 px-1">
+                      Margem de lucro de <strong>{currentMargin.toFixed(1)}%</strong> sobre o valor de venda.
+                    </p>
                   </div>
-                </div>
+
+                  {Number(currentTotalCost) > 0 && (
+                    <div className="p-4 rounded-xl bg-secondary space-y-2">
+                      <div className="flex items-center gap-2 mb-2"><Calculator className="h-4 w-4 text-primary" /><span className="font-semibold text-sm">Resumo da Precificação</span></div>
+                      <div className="grid grid-cols-2 gap-2 text-sm">
+                        <span className="text-muted-foreground">Custo da porção:</span><span className="font-medium">{fmt(portionCost)}</span>
+                        <span className="text-muted-foreground">Lucro p/ porção:</span><span className="font-medium text-emerald-600">{fmt(profitPerUnit)}</span>
+                        <span className="text-muted-foreground">Margem Final:</span><span className="font-bold text-primary">{currentMargin.toFixed(1)}%</span>
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
 
               <Button type="submit" className="w-full" disabled={createItem.isPending}>
