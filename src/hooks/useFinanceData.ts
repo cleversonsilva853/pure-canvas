@@ -50,7 +50,7 @@ export const useTransactions = (month?: number, year?: number) => {
 
       const { data, error } = await supabase
         .from('transactions')
-        .select('*, category:categories(*), account:accounts(*)')
+        .select('*, category:categories(*), account:accounts(*), goal:goals(*)')
         .gte('date', startDate)
         .lt('date', endDate)
         .order('date', { ascending: false });

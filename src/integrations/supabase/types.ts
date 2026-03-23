@@ -558,7 +558,7 @@ export type Database = {
           created_at: string
           credit_card_id: string | null
           date: string
-          description: string | null
+          goal_id: string | null
           id: string
           installment_number: number | null
           is_paid: boolean
@@ -578,6 +578,7 @@ export type Database = {
           credit_card_id?: string | null
           date?: string
           description?: string | null
+          goal_id?: string | null
           id?: string
           installment_number?: number | null
           is_paid?: boolean
@@ -597,6 +598,7 @@ export type Database = {
           credit_card_id?: string | null
           date?: string
           description?: string | null
+          goal_id?: string | null
           id?: string
           installment_number?: number | null
           is_paid?: boolean
@@ -628,6 +630,13 @@ export type Database = {
             columns: ["credit_card_id"]
             isOneToOne: false
             referencedRelation: "credit_cards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_goal_id_fkey"
+            columns: ["goal_id"]
+            isOneToOne: false
+            referencedRelation: "goals"
             referencedColumns: ["id"]
           },
           {
