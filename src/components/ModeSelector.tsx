@@ -1,5 +1,5 @@
 import { useAppMode, AppMode } from '@/contexts/AppModeContext';
-import { User, Building2, Heart } from 'lucide-react';
+import { User, Building2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const modes: { value: AppMode; label: string; icon: React.ElementType; color: string }[] = [

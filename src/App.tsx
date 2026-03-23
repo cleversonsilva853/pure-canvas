@@ -24,9 +24,6 @@ import BusinessExpenses from "@/pages/BusinessExpenses";
 import BusinessSales from "@/pages/BusinessSales";
 import BusinessProducts from "@/pages/BusinessProducts";
 import FoodPricing from "@/pages/FoodPricing";
-import CoupleDashboard from "@/pages/CoupleDashboard";
-import CoupleTransactions from "@/pages/CoupleTransactions";
-import CoupleInvite from "@/pages/CoupleInvite";
 
 const queryClient = new QueryClient();
 

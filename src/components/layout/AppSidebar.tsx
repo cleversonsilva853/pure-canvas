@@ -49,11 +49,6 @@ const businessNavItems = [
   { to: '/business/food-pricing', icon: UtensilsCrossed, label: 'Precificação' },
 ];
 
-const coupleNavItems = [
-  { to: '/couple', icon: Heart, label: 'Dashboard Casal' },
-  { to: '/couple/transactions', icon: ArrowUpDown, label: 'Transações' },
-  { to: '/couple/invite', icon: Users, label: 'Vincular Parceiro' },
-];
 
 const AppSidebar = () => {
   const { signOut, user } = useAuth();
