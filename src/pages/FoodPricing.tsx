@@ -145,6 +145,22 @@ const FoodPricing = () => {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div><Label>{mode === 'combo' ? 'Nome do Combo' : 'Nome do Produto'}</Label><Input required value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} /></div>
               
+              {mode === 'combo' && (
+                <div>
+                  <Label>Forma de Venda</Label>
+                  <Select value={form.unit} onValueChange={v => setForm(f => ({ ...f, unit: v }))}>
+                    <SelectTrigger><SelectValue placeholder="Selecione a forma de venda..." /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="un">Unidade (un)</SelectItem>
+                      <SelectItem value="kg">Quilos (kg)</SelectItem>
+                      <SelectItem value="g">Gramas (g)</SelectItem>
+                      <SelectItem value="L">Litros (L)</SelectItem>
+                      <SelectItem value="ml">Mililitros (ml)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              
               {mode === 'combo' ? (
                 <div className="space-y-4">
                   <div className="space-y-3 p-3 border rounded-xl bg-muted/30">
@@ -199,7 +215,7 @@ const FoodPricing = () => {
                               </PopoverContent>
                             </Popover>
                           </div>
-                          <div className="col-span-2 relative">
+                          <div className="col-span-2 relative group">
                             <Input 
                               placeholder="Qtd" 
                               className="h-8 text-xs pr-7" 
@@ -209,6 +225,13 @@ const FoodPricing = () => {
                             <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] text-muted-foreground font-medium uppercase">
                               {selectedItem?.unit || '---'}
                             </span>
+                            {selectedItem && ing.quantity && (
+                              <div className="absolute -bottom-4 left-0 right-0 text-center">
+                                <span className="text-[9px] font-bold text-emerald-600">
+                                  {fmt((Number(selectedItem.total_cost) / Number(selectedItem.total_quantity)) * Number(ing.quantity))}
+                                </span>
+                              </div>
+                            )}
                           </div>
                           <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-red-400" onClick={() => removeIngredient(idx)}><Trash2 className="h-3 w-3" /></Button>
                         </div>
