@@ -24,9 +24,6 @@ import BusinessExpenses from "@/pages/BusinessExpenses";
 import BusinessSales from "@/pages/BusinessSales";
 import BusinessProducts from "@/pages/BusinessProducts";
 import FoodPricing from "@/pages/FoodPricing";
-import CoupleDashboard from "@/pages/CoupleDashboard";
-import CoupleTransactions from "@/pages/CoupleTransactions";
-import CoupleInvite from "@/pages/CoupleInvite";
 
 const queryClient = new QueryClient();
 
@@ -73,9 +70,6 @@ const App = () => (
                   <Route path="business/sales" element={<BusinessSales />} />
                   <Route path="business/products" element={<BusinessProducts />} />
                   <Route path="business/food-pricing" element={<FoodPricing />} />
-                  <Route path="couple" element={<CoupleDashboard />} />
-                  <Route path="couple/transactions" element={<CoupleTransactions />} />
-                  <Route path="couple/invite" element={<CoupleInvite />} />
                 </Route>
                 <Route path="*" element={<NotFound />} />
               </Routes>
