@@ -59,11 +59,9 @@ const AppSidebar = () => {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  const navItems = mode === 'personal' ? personalNavItems
-    : mode === 'business' ? businessNavItems
-    : coupleNavItems;
+  const navItems = mode === 'business' ? businessNavItems : personalNavItems;
 
-  const modeLabel = mode === 'personal' ? 'Pessoal' : mode === 'business' ? 'Empresa' : 'Casal';
+  const modeLabel = mode === 'personal' ? 'Pessoal' : 'Empresa';
 
   return (
     <>

@@ -5,7 +5,6 @@ import { cn } from '@/lib/utils';
 const modes: { value: AppMode; label: string; icon: React.ElementType; color: string }[] = [
   { value: 'personal', label: 'Pessoal', icon: User, color: 'bg-primary' },
   { value: 'business', label: 'Empresa', icon: Building2, color: 'bg-primary' },
-  { value: 'couple', label: 'Casal', icon: Heart, color: 'bg-[hsl(330,80%,55%)]' },
 ];
 
 const ModeSelector = () => {
