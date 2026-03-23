@@ -33,10 +33,6 @@ const Settings = () => {
         'transactions',
         'budgets',
         'goals',
-        'business_sales',
-        'business_expenses',
-        'business_food_pricing',
-        'business_products',
         'accounts',
         'credit_cards',
         'categories'
@@ -87,9 +83,9 @@ const Settings = () => {
           <CardContent className="pt-6 space-y-6">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 rounded-xl border border-destructive/20 bg-destructive/5">
               <div className="space-y-1">
-                <p className="font-semibold text-destructive">Apagar todos os registros</p>
+                <p className="font-semibold text-destructive">Apagar todos os registros (Pessoal)</p>
                 <p className="text-sm text-muted-foreground max-w-md">
-                  Isso apagará permanentemente todas as suas transações, contas, categorias, metas, orçamentos e dados de empresa. Esta ação não poderá ser desfeita.
+                  Isso apagará permanentemente suas transações, contas, categorias, metas e orçamentos do perfil Pessoal. Seus dados de **Empresa** (vendas, produtos, etc.) serão preservados.
                 </p>
               </div>
               
@@ -97,14 +93,14 @@ const Settings = () => {
                 <AlertDialogTrigger asChild>
                   <Button variant="destructive" className="gap-2 shrink-0">
                     <Trash2 className="h-4 w-4" />
-                    Apagar Dados
+                    Apagar Dados Pessoais
                   </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
                     <AlertDialogTitle>Tem certeza absoluta?</AlertDialogTitle>
                     <AlertDialogDescription>
-                      Esta ação não pode ser desfeita. Isso apagará permanentemente todos os registros vinculados à sua conta de nossos servidores.
+                      Esta ação não pode ser desfeita. Isso apagará permanentemente todos os registros financeiros PESSOAIS vinculados à sua conta. Seus dados de EMPRESA não serão afetados.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
