@@ -166,13 +166,16 @@ const FoodPricing = () => {
                             </PopoverContent>
                           </Popover>
                         </div>
-                        <div className="col-span-2">
+                        <div className="col-span-2 relative">
                           <Input 
                             placeholder="Qtd" 
-                            className="h-8 text-xs" 
+                            className="h-8 text-xs pr-7" 
                             value={ing.quantity} 
                             onChange={e => updateIngredient(idx, 'quantity', e.target.value)} 
                           />
+                          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] text-muted-foreground font-medium uppercase">
+                            {selectedItem?.unit || '---'}
+                          </span>
                         </div>
                         <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-red-400" onClick={() => removeIngredient(idx)}><Trash2 className="h-3 w-3" /></Button>
                       </div>
