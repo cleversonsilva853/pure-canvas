@@ -86,6 +86,23 @@ export const useCreateBusinessProduct = () => {
   });
 };
 
+export const useUpdateBusinessProduct = () => {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: async (values: { id: string; name: string; sale_price: number; cost_price: number; stock?: number }) => {
+      const { id, ...updateValues } = values;
+      const { error } = await supabase.from('business_products').update(updateValues).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['business_products'] });
+      toast({ title: 'Produto atualizado!' });
+    },
+    onError: () => toast({ title: 'Erro ao atualizar produto', variant: 'destructive' }),
+  });
+};
+
 export const useDeleteBusinessProduct = () => {
   const qc = useQueryClient();
   const { toast } = useToast();
