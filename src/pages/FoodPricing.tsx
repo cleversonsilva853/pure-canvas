@@ -98,10 +98,10 @@ const FoodPricing = () => {
     const finalName = mode === 'combo' ? `🛒 ${form.name}` : form.name;
     const payload = {
       name: finalName,
-      total_quantity: Number(form.total_quantity),
-      unit: form.unit,
+      total_quantity: mode === 'combo' ? 1 : Number(form.total_quantity),
+      unit: mode === 'combo' ? 'un' : form.unit,
       total_cost: currentTotalCost,
-      portion_quantity: mode === 'combo' ? Number(form.portion_quantity) : Number(form.total_quantity),
+      portion_quantity: mode === 'combo' ? 1 : Number(form.total_quantity),
       profit_percentage: mode === 'combo' ? margin : 0,
     };
 
@@ -145,117 +145,109 @@ const FoodPricing = () => {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div><Label>{mode === 'combo' ? 'Nome do Combo' : 'Nome do Produto'}</Label><Input required value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} /></div>
               
-              {mode === 'combo' && (
-                <div className="space-y-3 p-3 border rounded-xl bg-muted/30">
-                  <div className="flex items-center justify-between">
-                    <Label className="text-secondary-foreground font-semibold">Composição do Combo</Label>
-                    <Button type="button" variant="outline" size="sm" onClick={addIngredient} className="h-7 text-[10px]"><Plus className="h-3 w-3 mr-1" />Add Insumo</Button>
+              {mode === 'combo' ? (
+                <div className="space-y-4">
+                  <div className="space-y-3 p-3 border rounded-xl bg-muted/30">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-secondary-foreground font-semibold">Composição do Combo</Label>
+                      <Button type="button" variant="outline" size="sm" onClick={addIngredient} className="h-7 text-[10px]"><Plus className="h-3 w-3 mr-1" />Add Insumo</Button>
+                    </div>
+                    {selectedIngredients.map((ing, idx) => {
+                      const selectedItem = items.find(i => i.id === ing.id);
+                      return (
+                        <div key={idx} className="grid grid-cols-7 gap-2 items-end">
+                          <div className="col-span-4">
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  role="combobox"
+                                  className={cn(
+                                    "w-full h-8 text-xs justify-between px-2 font-normal",
+                                    !ing.id && "text-muted-foreground"
+                                  )}
+                                >
+                                  {ing.id ? selectedItem?.name : "Selecionar insumo..."}
+                                  <ChevronsUpDown className="ml-2 h-3 w-3 shrink-0 opacity-50" />
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-[200px] p-0">
+                                <Command>
+                                  <CommandInput placeholder="Pesquisar insumo..." className="h-8 text-xs" />
+                                  <CommandList>
+                                    <CommandEmpty>Nenhum item encontrado.</CommandEmpty>
+                                    <CommandGroup>
+                                      {items.map((p) => (
+                                        <CommandItem
+                                          key={p.id}
+                                          value={p.name}
+                                          onSelect={() => updateIngredient(idx, 'id', p.id)}
+                                          className="text-xs"
+                                        >
+                                          <Check
+                                            className={cn(
+                                              "mr-2 h-3 w-3",
+                                              ing.id === p.id ? "opacity-100" : "opacity-0"
+                                            )}
+                                          />
+                                          {p.name}
+                                        </CommandItem>
+                                      ))}
+                                    </CommandGroup>
+                                  </CommandList>
+                                </Command>
+                              </PopoverContent>
+                            </Popover>
+                          </div>
+                          <div className="col-span-2 relative">
+                            <Input 
+                              placeholder="Qtd" 
+                              className="h-8 text-xs pr-7" 
+                              value={ing.quantity} 
+                              onChange={e => updateIngredient(idx, 'quantity', e.target.value)} 
+                            />
+                            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] text-muted-foreground font-medium uppercase">
+                              {selectedItem?.unit || '---'}
+                            </span>
+                          </div>
+                          <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-red-400" onClick={() => removeIngredient(idx)}><Trash2 className="h-3 w-3" /></Button>
+                        </div>
+                      );
+                    })}
+                    {selectedIngredients.length === 0 && <p className="text-[10px] text-muted-foreground text-center py-2">Nenhum insumo adicionado.</p>}
                   </div>
-                  {selectedIngredients.map((ing, idx) => {
-                    const selectedItem = items.find(i => i.id === ing.id);
-                    return (
-                      <div key={idx} className="grid grid-cols-7 gap-2 items-end">
-                        <div className="col-span-4">
-                          <Popover>
-                            <PopoverTrigger asChild>
-                              <Button
-                                variant="outline"
-                                role="combobox"
-                                className={cn(
-                                  "w-full h-8 text-xs justify-between px-2 font-normal",
-                                  !ing.id && "text-muted-foreground"
-                                )}
-                              >
-                                {ing.id ? selectedItem?.name : "Selecionar insumo..."}
-                                <ChevronsUpDown className="ml-2 h-3 w-3 shrink-0 opacity-50" />
-                              </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-[200px] p-0">
-                              <Command>
-                                <CommandInput placeholder="Pesquisar insumo..." className="h-8 text-xs" />
-                                <CommandList>
-                                  <CommandEmpty>Nenhum item encontrado.</CommandEmpty>
-                                  <CommandGroup>
-                                    {items.map((p) => (
-                                      <CommandItem
-                                        key={p.id}
-                                        value={p.name}
-                                        onSelect={() => updateIngredient(idx, 'id', p.id)}
-                                        className="text-xs"
-                                      >
-                                        <Check
-                                          className={cn(
-                                            "mr-2 h-3 w-3",
-                                            ing.id === p.id ? "opacity-100" : "opacity-0"
-                                          )}
-                                        />
-                                        {p.name}
-                                      </CommandItem>
-                                    ))}
-                                  </CommandGroup>
-                                </CommandList>
-                              </Command>
-                            </PopoverContent>
-                          </Popover>
-                        </div>
-                        <div className="col-span-2 relative">
-                          <Input 
-                            placeholder="Qtd" 
-                            className="h-8 text-xs pr-7" 
-                            value={ing.quantity} 
-                            onChange={e => updateIngredient(idx, 'quantity', e.target.value)} 
-                          />
-                          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] text-muted-foreground font-medium uppercase">
-                            {selectedItem?.unit || '---'}
-                          </span>
-                        </div>
-                        <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-red-400" onClick={() => removeIngredient(idx)}><Trash2 className="h-3 w-3" /></Button>
-                      </div>
-                    );
-                  })}
-                  {selectedIngredients.length === 0 && <p className="text-[10px] text-muted-foreground text-center py-2">Nenhum insumo adicionado.</p>}
+                  
+                  <div className="p-3 rounded-lg bg-primary/5 border border-primary/10 flex justify-between items-center">
+                    <span className="text-sm font-medium">Custo Sugerido do Combo:</span>
+                    <span className="text-lg font-bold text-primary">{fmt(calculatedComboCost)}</span>
+                  </div>
                 </div>
+              ) : (
+                <>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div><Label>Quantidade Total</Label><Input required type="number" step="0.01" min="0" value={form.total_quantity} onChange={e => setForm(f => ({ ...f, total_quantity: e.target.value }))} /></div>
+                    <div><Label>Unidade</Label>
+                      <Select value={form.unit} onValueChange={v => setForm(f => ({ ...f, unit: v }))}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="un">Unidade (un)</SelectItem>
+                          <SelectItem value="kg">Quilos (kg)</SelectItem>
+                          <SelectItem value="g">Gramas (g)</SelectItem>
+                          <SelectItem value="L">Litros (L)</SelectItem>
+                          <SelectItem value="ml">Mililitros (ml)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div><Label>Custo Total (R$)</Label><Input required type="number" step="0.01" min="0" value={form.total_cost} onChange={e => setForm(f => ({ ...f, total_cost: e.target.value }))} /></div>
+                </>
               )}
-
-              <div className="grid grid-cols-2 gap-4">
-                <div><Label>{mode === 'combo' ? 'Rendimento Total' : 'Quantidade Total'}</Label><Input required type="number" step="0.01" min="0" value={form.total_quantity} onChange={e => setForm(f => ({ ...f, total_quantity: e.target.value }))} /></div>
-                <div><Label>Unidade</Label>
-                  <Select value={form.unit} onValueChange={v => setForm(f => ({ ...f, unit: v }))}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="un">Unidade (un)</SelectItem>
-                      <SelectItem value="kg">Quilos (kg)</SelectItem>
-                      <SelectItem value="g">Gramas (g)</SelectItem>
-                      <SelectItem value="L">Litros (L)</SelectItem>
-                      <SelectItem value="ml">Mililitros (ml)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <div><Label>Custo {mode === 'combo' ? 'da Composição' : 'Total'} (R$)</Label><Input required type="number" step="0.01" min="0" value={mode === 'combo' ? calculatedComboCost.toFixed(2) : form.total_cost} readOnly={mode === 'combo'} onChange={e => setForm(f => ({ ...f, total_cost: e.target.value }))} className={mode === 'combo' ? 'bg-muted opacity-80' : ''} /></div>
               
               {mode === 'combo' && (
-                <>
-                  <div><Label>Quantidade por Porção Vendida ({form.unit})</Label><Input required type="number" step="0.01" min="0" value={form.portion_quantity} onChange={e => setForm(f => ({ ...f, portion_quantity: e.target.value }))} /></div>
-                  <div>
-                    <Label>Preço de Venda da Porção (R$)</Label>
-                    <Input required type="number" step="0.01" min="0" value={form.sale_price} onChange={e => setForm(f => ({ ...f, sale_price: e.target.value }))} />
-                    <p className="text-[10px] text-muted-foreground mt-1 px-1">
-                      Margem de lucro de <strong>{currentMargin.toFixed(1)}%</strong> sobre o valor de venda.
-                    </p>
-                  </div>
-
-                  {Number(currentTotalCost) > 0 && (
-                    <div className="p-4 rounded-xl bg-secondary space-y-2">
-                      <div className="flex items-center gap-2 mb-2"><Calculator className="h-4 w-4 text-primary" /><span className="font-semibold text-sm">Resumo da Precificação</span></div>
-                      <div className="grid grid-cols-2 gap-2 text-sm">
-                        <span className="text-muted-foreground">Custo da porção:</span><span className="font-medium">{fmt(portionCost)}</span>
-                        <span className="text-muted-foreground">Lucro p/ porção:</span><span className="font-medium text-emerald-600">{fmt(profitPerUnit)}</span>
-                        <span className="text-muted-foreground">Margem Final:</span><span className="font-bold text-primary">{currentMargin.toFixed(1)}%</span>
-                      </div>
-                    </div>
-                  )}
-                </>
+                <div className="opacity-0 h-0 overflow-hidden pointer-events-none">
+                  <Input value="1" readOnly />
+                  <Input value="" readOnly />
+                </div>
               )}
 
               <Button type="submit" className="w-full" disabled={createItem.isPending}>
