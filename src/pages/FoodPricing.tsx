@@ -20,13 +20,16 @@ const FoodPricing = () => {
 
   const costPerUnit = Number(form.total_cost || 0) / Number(form.total_quantity || 1);
   const portionCost = costPerUnit * Number(form.portion_quantity || 0);
-  const salePrice = portionCost * (1 + Number(form.profit_percentage || 0) / 100);
+  // Calculate Sale Price based on Margin over Sales (Preço = Custo / (1 - margem))
+  const marginDecimal = Number(form.profit_percentage || 0) / 100;
+  const salePrice = marginDecimal < 1 ? portionCost / (1 - marginDecimal) : portionCost * (1 + marginDecimal);
   const profitPerUnit = salePrice - portionCost;
 
   const calcItem = (item: any) => {
     const cpu = Number(item.total_cost) / Number(item.total_quantity);
     const pc = cpu * Number(item.portion_quantity);
-    const sp = pc * (1 + Number(item.profit_percentage) / 100);
+    const md = Number(item.profit_percentage) / 100;
+    const sp = md < 1 ? pc / (1 - md) : pc * (1 + md);
     const ppu = sp - pc;
     return { costPerUnit: cpu, portionCost: pc, salePrice: sp, profitPerUnit: ppu };
   };
@@ -72,7 +75,13 @@ const FoodPricing = () => {
               </div>
               <div><Label>Custo Total (R$)</Label><Input required type="number" step="0.01" min="0" value={form.total_cost} onChange={e => setForm(f => ({ ...f, total_cost: e.target.value }))} /></div>
               <div><Label>Quantidade por Porção ({form.unit})</Label><Input required type="number" step="0.01" min="0" value={form.portion_quantity} onChange={e => setForm(f => ({ ...f, portion_quantity: e.target.value }))} /></div>
-              <div><Label>Percentual de Lucro (%)</Label><Input required type="number" step="0.1" min="0" value={form.profit_percentage} onChange={e => setForm(f => ({ ...f, profit_percentage: e.target.value }))} /></div>
+              <div>
+                <Label>Margem de Lucro Desejada (%)</Label>
+                <Input required type="number" step="0.1" min="0" max="99.9" value={form.profit_percentage} onChange={e => setForm(f => ({ ...f, profit_percentage: e.target.value }))} />
+                <p className="text-[10px] text-muted-foreground mt-1 px-1">
+                  Lucro de <strong>{fmt(profitPerUnit)}</strong> sobre o valor de venda.
+                </p>
+              </div>
 
               {Number(form.total_cost) > 0 && (
                 <div className="p-4 rounded-xl bg-secondary space-y-2">
