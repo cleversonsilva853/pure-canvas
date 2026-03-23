@@ -112,9 +112,7 @@ const AppSidebar = () => {
               className={cn(
                 'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors',
                 location.pathname === to
-                  ? mode === 'couple'
-                    ? 'bg-[hsl(330,80%,55%)] text-white shadow-sm'
-                    : 'bg-primary text-primary-foreground shadow-sm'
+                  ? 'bg-primary text-primary-foreground shadow-sm'
                   : 'text-muted-foreground hover:bg-secondary hover:text-foreground',
                 collapsed && 'justify-center px-0'
               )}
