@@ -61,7 +61,10 @@ const FoodPricing = () => {
                   <Select value={form.unit} onValueChange={v => setForm(f => ({ ...f, unit: v }))}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="un">Unidade (un)</SelectItem>
+                      <SelectItem value="kg">Quilos (kg)</SelectItem>
                       <SelectItem value="g">Gramas (g)</SelectItem>
+                      <SelectItem value="L">Litros (L)</SelectItem>
                       <SelectItem value="ml">Mililitros (ml)</SelectItem>
                     </SelectContent>
                   </Select>
