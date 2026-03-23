@@ -22,6 +22,7 @@ import {
   ShoppingCart,
   Package,
   UtensilsCrossed,
+  Settings as SettingsIcon,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState, useEffect } from 'react';
@@ -36,6 +37,7 @@ const personalNavItems = [
   { to: '/budgets', icon: PieChart, label: 'Orçamentos' },
   { to: '/goals', icon: Target, label: 'Metas' },
   { to: '/reports', icon: BarChart3, label: 'Relatórios' },
+  { to: '/settings', icon: SettingsIcon, label: 'Configurações' },
 ];
 
 const businessNavItems = [
