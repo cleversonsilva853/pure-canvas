@@ -16,14 +16,13 @@ const FoodPricing = () => {
   const createItem = useCreateFoodPricing();
   const deleteItem = useDeleteFoodPricing();
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ name: '', total_quantity: '1000', unit: 'g', total_cost: '', portion_quantity: '100', profit_percentage: '30' });
+  const [form, setForm] = useState({ name: '', total_quantity: '1000', unit: 'g', total_cost: '', portion_quantity: '100', sale_price: '' });
 
   const costPerUnit = Number(form.total_cost || 0) / Number(form.total_quantity || 1);
   const portionCost = costPerUnit * Number(form.portion_quantity || 0);
-  // Calculate Sale Price based on Margin over Sales (Preço = Custo / (1 - margem))
-  const marginDecimal = Number(form.profit_percentage || 0) / 100;
-  const salePrice = marginDecimal < 1 ? portionCost / (1 - marginDecimal) : portionCost * (1 + marginDecimal);
-  const profitPerUnit = salePrice - portionCost;
+  const currentSalePrice = Number(form.sale_price || 0);
+  const profitPerUnit = currentSalePrice - portionCost;
+  const currentMargin = currentSalePrice > 0 ? (profitPerUnit / currentSalePrice) * 100 : 0;
 
   const calcItem = (item: any) => {
     const cpu = Number(item.total_cost) / Number(item.total_quantity);
@@ -36,15 +35,18 @@ const FoodPricing = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    // Re-calculate margin for database storage compatibility
+    const margin = currentSalePrice > 0 ? (profitPerUnit / currentSalePrice) * 100 : 0;
+    
     await createItem.mutateAsync({
       name: form.name,
       total_quantity: Number(form.total_quantity),
       unit: form.unit,
       total_cost: Number(form.total_cost),
       portion_quantity: Number(form.portion_quantity),
-      profit_percentage: Number(form.profit_percentage),
+      profit_percentage: margin,
     });
-    setForm({ name: '', total_quantity: '1000', unit: 'g', total_cost: '', portion_quantity: '100', profit_percentage: '30' });
+    setForm({ name: '', total_quantity: '1000', unit: 'g', total_cost: '', portion_quantity: '100', sale_price: '' });
     setOpen(false);
   };
 
@@ -76,21 +78,20 @@ const FoodPricing = () => {
               <div><Label>Custo Total (R$)</Label><Input required type="number" step="0.01" min="0" value={form.total_cost} onChange={e => setForm(f => ({ ...f, total_cost: e.target.value }))} /></div>
               <div><Label>Quantidade por Porção ({form.unit})</Label><Input required type="number" step="0.01" min="0" value={form.portion_quantity} onChange={e => setForm(f => ({ ...f, portion_quantity: e.target.value }))} /></div>
               <div>
-                <Label>Margem de Lucro Desejada (%)</Label>
-                <Input required type="number" step="0.1" min="0" max="99.9" value={form.profit_percentage} onChange={e => setForm(f => ({ ...f, profit_percentage: e.target.value }))} />
+                <Label>Preço de Venda Desejado (R$)</Label>
+                <Input required type="number" step="0.01" min="0" value={form.sale_price} onChange={e => setForm(f => ({ ...f, sale_price: e.target.value }))} />
                 <p className="text-[10px] text-muted-foreground mt-1 px-1">
-                  Lucro de <strong>{fmt(profitPerUnit)}</strong> sobre o valor de venda.
+                  Margem de lucro de <strong>{currentMargin.toFixed(1)}%</strong> sobre o valor de venda.
                 </p>
               </div>
 
               {Number(form.total_cost) > 0 && (
                 <div className="p-4 rounded-xl bg-secondary space-y-2">
-                  <div className="flex items-center gap-2 mb-2"><Calculator className="h-4 w-4 text-primary" /><span className="font-semibold text-sm">Cálculo Automático</span></div>
+                  <div className="flex items-center gap-2 mb-2"><Calculator className="h-4 w-4 text-primary" /><span className="font-semibold text-sm">Resumo da Precificação</span></div>
                   <div className="grid grid-cols-2 gap-2 text-sm">
-                    <span className="text-muted-foreground">Custo por {form.unit}:</span><span className="font-medium">{fmt(costPerUnit)}</span>
                     <span className="text-muted-foreground">Custo da porção:</span><span className="font-medium">{fmt(portionCost)}</span>
-                    <span className="text-muted-foreground">Preço de venda:</span><span className="font-bold text-primary">{fmt(salePrice)}</span>
-                    <span className="text-muted-foreground">Lucro por unidade:</span><span className="font-medium text-emerald-600">{fmt(profitPerUnit)}</span>
+                    <span className="text-muted-foreground">Lucro p/ porção:</span><span className="font-medium text-emerald-600">{fmt(profitPerUnit)}</span>
+                    <span className="text-muted-foreground">Margem Final:</span><span className="font-bold text-primary">{currentMargin.toFixed(1)}%</span>
                   </div>
                 </div>
               )}
