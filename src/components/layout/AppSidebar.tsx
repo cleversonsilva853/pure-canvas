@@ -22,9 +22,6 @@ import {
   ShoppingCart,
   Package,
   UtensilsCrossed,
-  Heart,
-  Users,
-  ArrowRightLeft,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState, useEffect } from 'react';
@@ -49,11 +46,6 @@ const businessNavItems = [
   { to: '/business/food-pricing', icon: UtensilsCrossed, label: 'Precificação' },
 ];
 
-const coupleNavItems = [
-  { to: '/couple', icon: Heart, label: 'Dashboard Casal' },
-  { to: '/couple/transactions', icon: ArrowUpDown, label: 'Transações' },
-  { to: '/couple/invite', icon: Users, label: 'Vincular Parceiro' },
-];
 
 const AppSidebar = () => {
   const { signOut, user } = useAuth();
@@ -64,11 +56,9 @@ const AppSidebar = () => {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  const navItems = mode === 'personal' ? personalNavItems
-    : mode === 'business' ? businessNavItems
-    : coupleNavItems;
+  const navItems = mode === 'business' ? businessNavItems : personalNavItems;
 
-  const modeLabel = mode === 'personal' ? 'Pessoal' : mode === 'business' ? 'Empresa' : 'Casal';
+  const modeLabel = mode === 'personal' ? 'Pessoal' : 'Empresa';
 
   return (
     <>
@@ -119,9 +109,7 @@ const AppSidebar = () => {
               className={cn(
                 'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors',
                 location.pathname === to
-                  ? mode === 'couple'
-                    ? 'bg-[hsl(330,80%,55%)] text-white shadow-sm'
-                    : 'bg-primary text-primary-foreground shadow-sm'
+                  ? 'bg-primary text-primary-foreground shadow-sm'
                   : 'text-muted-foreground hover:bg-secondary hover:text-foreground',
                 collapsed && 'justify-center px-0'
               )}

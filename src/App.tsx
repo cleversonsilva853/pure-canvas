@@ -7,6 +7,8 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AppModeProvider } from "@/contexts/AppModeContext";
 import AppLayout from "@/components/layout/AppLayout";
+import PWAInstallPrompt from "@/components/PWAInstallPrompt";
+import PWAUpdatePrompt from "@/components/PWAUpdatePrompt";
 import Auth from "@/pages/Auth";
 import Index from "@/pages/Index";
 import Transactions from "@/pages/Transactions";
@@ -22,9 +24,6 @@ import BusinessExpenses from "@/pages/BusinessExpenses";
 import BusinessSales from "@/pages/BusinessSales";
 import BusinessProducts from "@/pages/BusinessProducts";
 import FoodPricing from "@/pages/FoodPricing";
-import CoupleDashboard from "@/pages/CoupleDashboard";
-import CoupleTransactions from "@/pages/CoupleTransactions";
-import CoupleInvite from "@/pages/CoupleInvite";
 
 const queryClient = new QueryClient();
 
@@ -52,6 +51,8 @@ const App = () => (
           <TooltipProvider>
             <Toaster />
             <Sonner />
+            <PWAInstallPrompt />
+            <PWAUpdatePrompt />
             <BrowserRouter>
               <Routes>
                 <Route path="/auth" element={<AuthRoute />} />
@@ -69,9 +70,6 @@ const App = () => (
                   <Route path="business/sales" element={<BusinessSales />} />
                   <Route path="business/products" element={<BusinessProducts />} />
                   <Route path="business/food-pricing" element={<FoodPricing />} />
-                  <Route path="couple" element={<CoupleDashboard />} />
-                  <Route path="couple/transactions" element={<CoupleTransactions />} />
-                  <Route path="couple/invite" element={<CoupleInvite />} />
                 </Route>
                 <Route path="*" element={<NotFound />} />
               </Routes>

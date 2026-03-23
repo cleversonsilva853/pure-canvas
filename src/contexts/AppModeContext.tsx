@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, ReactNode } from 'react';
 
-export type AppMode = 'personal' | 'business' | 'couple';
+export type AppMode = 'personal' | 'business';
 
 interface AppModeContextType {
   mode: AppMode;
