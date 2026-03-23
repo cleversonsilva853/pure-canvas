@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,9 +16,23 @@ const FoodPricing = () => {
   const createItem = useCreateFoodPricing();
   const deleteItem = useDeleteFoodPricing();
   const [open, setOpen] = useState(false);
+  const [mode, setMode] = useState<'simple' | 'combo'>('simple');
   const [form, setForm] = useState({ name: '', total_quantity: '1000', unit: 'g', total_cost: '', portion_quantity: '100', sale_price: '' });
+  const [selectedIngredients, setSelectedIngredients] = useState<{ id: string, quantity: string }[]>([]);
 
-  const costPerUnit = Number(form.total_cost || 0) / Number(form.total_quantity || 1);
+  // Calculation for Combo Cost
+  const calculatedComboCost = useMemo(() => {
+    if (mode === 'simple') return 0;
+    return selectedIngredients.reduce((acc, ing) => {
+      const item = items.find(i => i.id === ing.id);
+      if (!item) return acc;
+      const unitCost = Number(item.total_cost) / Number(item.total_quantity);
+      return acc + (unitCost * Number(ing.quantity || 0));
+    }, 0);
+  }, [mode, selectedIngredients, items]);
+
+  const currentTotalCost = mode === 'combo' ? calculatedComboCost : Number(form.total_cost || 0);
+  const costPerUnit = currentTotalCost / Number(form.total_quantity || 1);
   const portionCost = costPerUnit * Number(form.portion_quantity || 0);
   const currentSalePrice = Number(form.sale_price || 0);
   const profitPerUnit = currentSalePrice - portionCost;
@@ -33,20 +47,39 @@ const FoodPricing = () => {
     return { costPerUnit: cpu, portionCost: pc, salePrice: sp, profitPerUnit: ppu };
   };
 
+  const addIngredient = () => {
+    setSelectedIngredients([...selectedIngredients, { id: '', quantity: '' }]);
+  };
+
+  const removeIngredient = (index: number) => {
+    setSelectedIngredients(selectedIngredients.filter((_, i) => i !== index));
+  };
+
+  const updateIngredient = (index: number, field: 'id' | 'quantity', value: string) => {
+    const newIngs = [...selectedIngredients];
+    newIngs[index][field] = value;
+    setSelectedIngredients(newIngs);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Re-calculate margin for database storage compatibility
     const margin = currentSalePrice > 0 ? (profitPerUnit / currentSalePrice) * 100 : 0;
     
+    // For combos, the "name" can include a visual indicator
+    const finalName = mode === 'combo' ? `🛒 ${form.name}` : form.name;
+
     await createItem.mutateAsync({
-      name: form.name,
+      name: finalName,
       total_quantity: Number(form.total_quantity),
-      unit: form.unit,
-      total_cost: Number(form.total_cost),
+      unit: mode === 'combo' ? 'un' : form.unit,
+      total_cost: currentTotalCost,
       portion_quantity: Number(form.portion_quantity),
       profit_percentage: margin,
     });
+    
     setForm({ name: '', total_quantity: '1000', unit: 'g', total_cost: '', portion_quantity: '100', sale_price: '' });
+    setSelectedIngredients([]);
+    setMode('simple');
     setOpen(false);
   };
 
@@ -58,12 +91,60 @@ const FoodPricing = () => {
           <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-2" />Novo Item</Button></DialogTrigger>
           <DialogContent className="max-w-lg">
             <DialogHeader><DialogTitle>Precificação de Produto</DialogTitle></DialogHeader>
+            
+            <div className="flex gap-2 p-1 bg-muted rounded-lg mb-4">
+              <Button 
+                type="button" 
+                variant={mode === 'simple' ? 'default' : 'ghost'} 
+                className="flex-1 h-8 text-xs" 
+                onClick={() => setMode('simple')}
+              >Item Simples</Button>
+              <Button 
+                type="button" 
+                variant={mode === 'combo' ? 'default' : 'ghost'} 
+                className="flex-1 h-8 text-xs" 
+                onClick={() => setMode('combo')}
+              >Combo / Ficha Técnica</Button>
+            </div>
+
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div><Label>Nome do Produto</Label><Input required value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} /></div>
+              <div><Label>{mode === 'combo' ? 'Nome do Combo' : 'Nome do Produto'}</Label><Input required value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} /></div>
+              
+              {mode === 'combo' && (
+                <div className="space-y-3 p-3 border rounded-xl bg-muted/30">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-secondary-foreground font-semibold">Composição do Combo</Label>
+                    <Button type="button" variant="outline" size="sm" onClick={addIngredient} className="h-7 text-[10px]"><Plus className="h-3 w-3 mr-1" />Add Insumo</Button>
+                  </div>
+                  {selectedIngredients.map((ing, idx) => (
+                    <div key={idx} className="grid grid-cols-7 gap-2 items-end">
+                      <div className="col-span-4">
+                        <Select value={ing.id} onValueChange={v => updateIngredient(idx, 'id', v)}>
+                          <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Insumo..." /></SelectTrigger>
+                          <SelectContent>
+                            {items.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="col-span-2">
+                        <Input 
+                          placeholder="Qtd" 
+                          className="h-8 text-xs" 
+                          value={ing.quantity} 
+                          onChange={e => updateIngredient(idx, 'quantity', e.target.value)} 
+                        />
+                      </div>
+                      <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-red-400" onClick={() => removeIngredient(idx)}><Trash2 className="h-3 w-3" /></Button>
+                    </div>
+                  ))}
+                  {selectedIngredients.length === 0 && <p className="text-[10px] text-muted-foreground text-center py-2">Nenhum insumo adicionado.</p>}
+                </div>
+              )}
+
               <div className="grid grid-cols-2 gap-4">
                 <div><Label>Quantidade Total</Label><Input required type="number" step="0.01" min="0" value={form.total_quantity} onChange={e => setForm(f => ({ ...f, total_quantity: e.target.value }))} /></div>
                 <div><Label>Unidade</Label>
-                  <Select value={form.unit} onValueChange={v => setForm(f => ({ ...f, unit: v }))}>
+                  <Select value={form.unit} disabled={mode === 'combo'} onValueChange={v => setForm(f => ({ ...f, unit: v }))}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="un">Unidade (un)</SelectItem>
@@ -75,8 +156,8 @@ const FoodPricing = () => {
                   </Select>
                 </div>
               </div>
-              <div><Label>Custo Total (R$)</Label><Input required type="number" step="0.01" min="0" value={form.total_cost} onChange={e => setForm(f => ({ ...f, total_cost: e.target.value }))} /></div>
-              <div><Label>Quantidade por Porção ({form.unit})</Label><Input required type="number" step="0.01" min="0" value={form.portion_quantity} onChange={e => setForm(f => ({ ...f, portion_quantity: e.target.value }))} /></div>
+              <div><Label>Custo Total (R$)</Label><Input required type="number" step="0.01" min="0" value={mode === 'combo' ? calculatedComboCost.toFixed(2) : form.total_cost} readOnly={mode === 'combo'} onChange={e => setForm(f => ({ ...f, total_cost: e.target.value }))} className={mode === 'combo' ? 'bg-muted opacity-80' : ''} /></div>
+              <div><Label>Quantidade por Porção ({mode === 'combo' ? 'un' : form.unit})</Label><Input required type="number" step="0.01" min="0" value={form.portion_quantity} onChange={e => setForm(f => ({ ...f, portion_quantity: e.target.value }))} /></div>
               <div>
                 <Label>Preço de Venda Desejado (R$)</Label>
                 <Input required type="number" step="0.01" min="0" value={form.sale_price} onChange={e => setForm(f => ({ ...f, sale_price: e.target.value }))} />
