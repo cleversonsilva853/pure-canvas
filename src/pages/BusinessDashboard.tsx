@@ -1,7 +1,8 @@
 import { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useBusinessExpenses, useBusinessSales } from '@/hooks/useBusinessData';
-import { DollarSign, TrendingDown, TrendingUp, Percent } from 'lucide-react';
+import { useAccounts } from '@/hooks/useFinanceData';
+import { DollarSign, TrendingDown, TrendingUp, Percent, Wallet } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
@@ -10,6 +11,7 @@ const fmt = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', c
 const BusinessDashboard = () => {
   const { data: expenses = [] } = useBusinessExpenses();
   const { data: sales = [] } = useBusinessSales();
+  const { data: accounts = [] } = useAccounts();
 
   const today = new Date().toISOString().slice(0, 10);
   const currentMonth = new Date().getMonth();
@@ -18,6 +20,7 @@ const BusinessDashboard = () => {
   const stats = useMemo(() => {
     const totalExpenses = expenses.reduce((s, e) => s + Number(e.amount), 0);
     const totalSales = sales.reduce((s, e) => s + Number(e.total_price), 0);
+    const totalBalance = accounts.reduce((s, a) => s + Number(a.balance), 0);
     const dailyExpenses = expenses.filter(e => e.date === today).reduce((s, e) => s + Number(e.amount), 0);
     const dailySales = sales.filter(e => e.date === today).reduce((s, e) => s + Number(e.total_price), 0);
     const monthlyExpenses = expenses.filter(e => { const d = new Date(e.date); return d.getMonth() === currentMonth && d.getFullYear() === currentYear; }).reduce((s, e) => s + Number(e.amount), 0);
@@ -28,8 +31,8 @@ const BusinessDashboard = () => {
     const monthlyProfit = monthlySales - monthlyExpenses;
     const margin = totalSales > 0 ? (totalProfit / totalSales) * 100 : 0;
 
-    return { totalExpenses, totalSales, dailyExpenses, dailySales, monthlyExpenses, monthlySales, totalProfit, dailyProfit, monthlyProfit, margin };
-  }, [expenses, sales, today, currentMonth, currentYear]);
+    return { totalExpenses, totalSales, totalBalance, dailyExpenses, dailySales, monthlyExpenses, monthlySales, totalProfit, dailyProfit, monthlyProfit, margin };
+  }, [expenses, sales, accounts, today, currentMonth, currentYear]);
 
   const chartData = useMemo(() => {
     const months: Record<string, { name: string; vendas: number; despesas: number }> = {};
@@ -45,6 +48,7 @@ const BusinessDashboard = () => {
   }, [expenses, sales, currentMonth, currentYear]);
 
   const cards = [
+    { title: 'Saldo em Contas', value: fmt(stats.totalBalance), icon: Wallet, color: 'text-primary' },
     { title: 'Faturamento Total', value: fmt(stats.totalSales), icon: DollarSign, color: 'text-emerald-500' },
     { title: 'Despesas Totais', value: fmt(stats.totalExpenses), icon: TrendingDown, color: 'text-red-500' },
     { title: 'Lucro Total', value: fmt(stats.totalProfit), icon: TrendingUp, color: stats.totalProfit >= 0 ? 'text-emerald-500' : 'text-red-500' },
@@ -55,7 +59,7 @@ const BusinessDashboard = () => {
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">Financeiro Empresa</h1>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
         {cards.map((c, i) => (
           <motion.div key={c.title} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
             <Card>
