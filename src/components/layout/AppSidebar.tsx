@@ -23,6 +23,7 @@ import {
   Package,
   UtensilsCrossed,
   Settings as SettingsIcon,
+  LineChart,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState, useEffect } from 'react';
@@ -46,6 +47,7 @@ const businessNavItems = [
   { to: '/business/sales', icon: ShoppingCart, label: 'Vendas' },
   { to: '/business/products', icon: Package, label: 'Produtos' },
   { to: '/business/food-pricing', icon: UtensilsCrossed, label: 'Precificação' },
+  { to: '/business/dre', icon: LineChart, label: 'DRE' },
 ];
 
 
