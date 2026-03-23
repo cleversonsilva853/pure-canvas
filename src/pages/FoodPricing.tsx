@@ -7,7 +7,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useFoodPricing, useCreateFoodPricing, useDeleteFoodPricing } from '@/hooks/useBusinessData';
-import { Plus, Trash2, Calculator } from 'lucide-react';
+import { Plus, Trash2, Calculator, Check, ChevronsUpDown } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { cn } from '@/lib/utils';
 
 const fmt = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
 
@@ -116,27 +119,65 @@ const FoodPricing = () => {
                     <Label className="text-secondary-foreground font-semibold">Composição do Combo</Label>
                     <Button type="button" variant="outline" size="sm" onClick={addIngredient} className="h-7 text-[10px]"><Plus className="h-3 w-3 mr-1" />Add Insumo</Button>
                   </div>
-                  {selectedIngredients.map((ing, idx) => (
-                    <div key={idx} className="grid grid-cols-7 gap-2 items-end">
-                      <div className="col-span-4">
-                        <Select value={ing.id} onValueChange={v => updateIngredient(idx, 'id', v)}>
-                          <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Insumo..." /></SelectTrigger>
-                          <SelectContent>
-                            {items.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
-                          </SelectContent>
-                        </Select>
+                  {selectedIngredients.map((ing, idx) => {
+                    const selectedItem = items.find(i => i.id === ing.id);
+                    return (
+                      <div key={idx} className="grid grid-cols-7 gap-2 items-end">
+                        <div className="col-span-4">
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant="outline"
+                                role="combobox"
+                                className={cn(
+                                  "w-full h-8 text-xs justify-between px-2 font-normal",
+                                  !ing.id && "text-muted-foreground"
+                                )}
+                              >
+                                {ing.id ? selectedItem?.name : "Selecionar insumo..."}
+                                <ChevronsUpDown className="ml-2 h-3 w-3 shrink-0 opacity-50" />
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-[200px] p-0">
+                              <Command>
+                                <CommandInput placeholder="Pesquisar insumo..." className="h-8 text-xs" />
+                                <CommandList>
+                                  <CommandEmpty>Nenhum item encontrado.</CommandEmpty>
+                                  <CommandGroup>
+                                    {items.map((p) => (
+                                      <CommandItem
+                                        key={p.id}
+                                        value={p.name}
+                                        onSelect={() => updateIngredient(idx, 'id', p.id)}
+                                        className="text-xs"
+                                      >
+                                        <Check
+                                          className={cn(
+                                            "mr-2 h-3 w-3",
+                                            ing.id === p.id ? "opacity-100" : "opacity-0"
+                                          )}
+                                        />
+                                        {p.name}
+                                      </CommandItem>
+                                    ))}
+                                  </CommandGroup>
+                                </CommandList>
+                              </Command>
+                            </PopoverContent>
+                          </Popover>
+                        </div>
+                        <div className="col-span-2">
+                          <Input 
+                            placeholder="Qtd" 
+                            className="h-8 text-xs" 
+                            value={ing.quantity} 
+                            onChange={e => updateIngredient(idx, 'quantity', e.target.value)} 
+                          />
+                        </div>
+                        <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-red-400" onClick={() => removeIngredient(idx)}><Trash2 className="h-3 w-3" /></Button>
                       </div>
-                      <div className="col-span-2">
-                        <Input 
-                          placeholder="Qtd" 
-                          className="h-8 text-xs" 
-                          value={ing.quantity} 
-                          onChange={e => updateIngredient(idx, 'quantity', e.target.value)} 
-                        />
-                      </div>
-                      <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-red-400" onClick={() => removeIngredient(idx)}><Trash2 className="h-3 w-3" /></Button>
-                    </div>
-                  ))}
+                    );
+                  })}
                   {selectedIngredients.length === 0 && <p className="text-[10px] text-muted-foreground text-center py-2">Nenhum insumo adicionado.</p>}
                 </div>
               )}
