@@ -104,11 +104,15 @@ const BusinessPricing = () => {
     }, 0);
   }, [compositions, ingredients]);
 
+  const profitValue = useMemo(() => {
+    if (!selectedProduct) return 0;
+    return Number(selectedProduct.sale_price) - totalCost;
+  }, [selectedProduct, totalCost]);
+
   const profitMargin = useMemo(() => {
     if (!selectedProduct || selectedProduct.sale_price <= 0) return 0;
-    const profit = Number(selectedProduct.sale_price) - totalCost;
-    return (profit / Number(selectedProduct.sale_price)) * 100;
-  }, [selectedProduct, totalCost]);
+    return (profitValue / Number(selectedProduct.sale_price)) * 100;
+  }, [selectedProduct, profitValue]);
 
   return (
     <div className="space-y-6 pb-20">
@@ -302,21 +306,28 @@ const BusinessPricing = () => {
                         className="space-y-6"
                       >
                         {/* Summary Card */}
-                        <div className="grid grid-cols-3 gap-4">
-                          <div className="p-4 rounded-3xl bg-primary text-primary-foreground shadow-lg col-span-1">
+                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                          <div className="p-4 rounded-3xl bg-primary text-primary-foreground shadow-lg h-24 flex flex-col justify-between">
                             <p className="text-[10px] font-bold uppercase opacity-80">Custo Total</p>
-                            <p className="text-xl font-bold">{formatCurrency(totalCost)}</p>
+                            <p className="text-xl font-bold truncate">{formatCurrency(totalCost)}</p>
                           </div>
-                          <div className="p-4 rounded-3xl bg-secondary shadow-lg col-span-1 border border-border">
+                          <div className="p-4 rounded-3xl bg-secondary shadow-lg h-24 border border-border flex flex-col justify-between">
                             <p className="text-[10px] font-bold uppercase text-muted-foreground">Preço Venda</p>
-                            <p className="text-xl font-bold">{formatCurrency(Number(selectedProduct?.sale_price || 0))}</p>
+                            <p className="text-xl font-bold truncate">{formatCurrency(Number(selectedProduct?.sale_price || 0))}</p>
                           </div>
                           <div className={cn(
-                            "p-4 rounded-3xl shadow-lg col-span-1 flex flex-col justify-between",
-                            profitMargin > 30 ? "bg-green-500 text-white" : profitMargin > 0 ? "bg-orange-500 text-white" : "bg-red-500 text-white"
+                            "p-4 rounded-3xl shadow-lg h-24 border border-border flex flex-col justify-between",
+                            profitValue > 0 ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"
                           )}>
-                            <p className="text-[10px] font-bold uppercase opacity-80">Margem</p>
-                            <p className="text-xl font-bold">{profitMargin.toFixed(1)}%</p>
+                            <p className="text-[10px] font-bold uppercase opacity-80">Lucro (R$)</p>
+                            <p className="text-xl font-bold truncate">{formatCurrency(profitValue)}</p>
+                          </div>
+                          <div className={cn(
+                            "p-4 rounded-3xl shadow-lg h-24 flex flex-col justify-between text-white",
+                            profitMargin > 30 ? "bg-green-500" : profitMargin > 0 ? "bg-orange-500" : "bg-red-500"
+                          )}>
+                            <p className="text-[10px] font-bold uppercase opacity-80">Margem (%)</p>
+                            <p className="text-xl font-bold truncate">{profitMargin.toFixed(1)}%</p>
                           </div>
                         </div>
 
