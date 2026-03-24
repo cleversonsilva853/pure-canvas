@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useCoupleTransactions, useCoupleMembers, useCoupleGoals } from '@/hooks/useFinanceData';
+import { useCoupleTransactions, useCoupleMembers, useCoupleGoals, useCoupleBudgets } from '@/hooks/useFinanceData';
 import { useAuth } from '@/contexts/AuthContext';
 import { Progress } from '@/components/ui/progress';
 import {
@@ -49,8 +49,9 @@ const CoupleDashboard = () => {
   const { data: transactions = [], isLoading: loadingTransactions } = useCoupleTransactions();
   const { data: members = [] } = useCoupleMembers();
   const { data: goals = [], isLoading: loadingGoals } = useCoupleGoals();
+  const { data: budgets = [], isLoading: loadingBudgets } = useCoupleBudgets();
 
-  const isLoading = loadingTransactions || loadingGoals;
+  const isLoading = loadingTransactions || loadingGoals || loadingBudgets;
 
   const memberNames = useMemo(() => {
     const map = new Map<string, string>();
@@ -88,6 +89,26 @@ const CoupleDashboard = () => {
       return { ...g, progress, authorName: name, isOwner };
     });
   }, [goals, memberNames, user?.id]);
+
+  const budgetsWithProgress = useMemo(() => {
+    // Agrupa gastos por categoria para comparar com orçamento
+    const spentByCategory = new Map<string, number>();
+    transactions
+      .filter(t => t.type === 'expense' && t.category)
+      .forEach(t => {
+        const catName = (t.category as any).name;
+        spentByCategory.set(catName, (spentByCategory.get(catName) || 0) + Number(t.amount));
+      });
+
+    return budgets.map(b => {
+      const catName = (b.category as any)?.name || 'Sem Categoria';
+      const spent = spentByCategory.get(catName) || 0;
+      const progress = Math.min(Math.round((spent / Number(b.amount)) * 100), 100);
+      const name = memberNames.get(b.user_id) || 'Privado';
+      const isOwner = b.user_id === user?.id;
+      return { ...b, progress, spent, authorName: name, isOwner, catName };
+    });
+  }, [budgets, transactions, memberNames, user?.id]);
 
   const categoryExpenses = useMemo(() => {
     const map = new Map<string, { name: string; value: number; color: string }>();
@@ -308,6 +329,59 @@ const CoupleDashboard = () => {
                     <div className="flex justify-between text-[10px] text-muted-foreground font-medium">
                       <span>{formatCurrency(Number(goal.current_amount))}</span>
                       <span>de {formatCurrency(Number(goal.target_amount))}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      {/* Couple Budgets Section */}
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.58 }}>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div className="flex items-center gap-2">
+              <TrendingDown className="h-5 w-5 text-destructive" />
+              <CardTitle className="text-base">Orçamentos Ativos (Foco Mensal)</CardTitle>
+            </div>
+            <Button variant="ghost" size="sm" onClick={() => navigate('/budgets')}>
+              Ver todos
+            </Button>
+          </CardHeader>
+          <CardContent>
+            {budgets.length === 0 ? (
+              <p className="text-sm text-muted-foreground italic">Nenhum orçamento definido para este mês.</p>
+            ) : (
+              <div className="grid md:grid-cols-2 gap-4">
+                {budgetsWithProgress.slice(0, 4).map((budget) => (
+                  <div key={budget.id} className="p-4 rounded-xl bg-secondary/30 border border-border/50">
+                    <div className="flex justify-between items-start mb-2">
+                      <div>
+                        <h4 className="font-semibold text-sm">{budget.catName}</h4>
+                        <span className={cn(
+                          "px-1.5 py-0.5 rounded-full text-[9px] font-bold uppercase",
+                          budget.isOwner ? "bg-primary/10 text-primary" : "bg-blue-500/10 text-blue-600"
+                        )}>
+                          {budget.authorName}
+                        </span>
+                      </div>
+                      <span className={cn(
+                        "text-xs font-bold",
+                        budget.progress > 90 ? "text-destructive" : "text-primary"
+                      )}>
+                        {budget.progress}%
+                      </span>
+                    </div>
+                    <Progress 
+                      value={budget.progress} 
+                      className="h-1.5 mb-2" 
+                      indicatorClassName={budget.progress > 90 ? "bg-destructive" : ""} 
+                    />
+                    <div className="flex justify-between text-[10px] text-muted-foreground font-medium">
+                      <span>Gasto: {formatCurrency(budget.spent)}</span>
+                      <span>Limite: {formatCurrency(Number(budget.amount))}</span>
                     </div>
                   </div>
                 ))}

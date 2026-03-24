@@ -57,6 +57,30 @@ export const useCoupleGoals = () => {
   });
 };
 
+export const useCoupleBudgets = (month?: number, year?: number) => {
+  const { user } = useAuth();
+  const now = new Date();
+  const m = month ?? now.getMonth() + 1;
+  const y = year ?? now.getFullYear();
+
+  return useQuery({
+    queryKey: ['couple-budgets', user?.id, m, y],
+    queryFn: async () => {
+      if (!user) return [];
+
+      const { data, error } = await supabase
+        .from('budgets')
+        .select('*, category:categories(*)')
+        .eq('month', m)
+        .eq('year', y);
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user,
+  });
+};
+
 export const useTransactions = (month?: number, year?: number) => {
   const { user } = useAuth();
   const now = new Date();
