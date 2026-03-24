@@ -38,7 +38,8 @@ const Settings = () => {
         options: {
           data: {
             full_name: 'Conta Casal'
-          }
+          },
+          emailRedirectTo: window.location.origin
         }
       });
       if (error) throw error;
