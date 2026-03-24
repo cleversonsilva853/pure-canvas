@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useCoupleTransactions, useCoupleMembers, useCoupleGoals } from '@/hooks/useFinanceData';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/contexts/AuthContext';
 import { Progress } from '@/components/ui/progress';
 import {
   Wallet,
