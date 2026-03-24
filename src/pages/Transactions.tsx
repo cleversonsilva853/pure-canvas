@@ -70,6 +70,18 @@ const Transactions = () => {
         ? (user.user_metadata?.created_by || user.id) 
         : user.id;
 
+      // Ensure paid_by is a valid UUID or user.id
+      let finalPaidBy = user.id;
+      if (contextType === 'couple') {
+        if (paidBy && paidBy !== 'spouse') {
+          finalPaidBy = paidBy;
+        } else {
+          // If no specific spouse ID, just use the logged in user as fallback
+          // or warn the user. For now, fallback to user.id to avoid crash.
+          finalPaidBy = user.id;
+        }
+      }
+
       const { error } = await supabase.from('transactions').insert({
         user_id: ownerId,
         type,
@@ -81,7 +93,7 @@ const Transactions = () => {
         credit_card_id: creditCardId && creditCardId !== 'none' ? creditCardId : null,
         is_paid: !creditCardId || creditCardId === 'none',
         context_type: contextType,
-        paid_by: contextType === 'couple' ? (paidBy || user.id) : user.id,
+        paid_by: finalPaidBy,
       });
       if (error) throw error;
 
