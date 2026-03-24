@@ -29,9 +29,12 @@ const Transactions = () => {
   const { data: categories = [] } = useCategories();
   const { data: budgets = [] } = useBudgets();
   const { data: creditCards = [] } = useCreditCards();
+  const { data: coupleMembers = [] } = useCoupleMembers();
 
   // Form state
   const [type, setType] = useState<string>('expense');
+  const [contextType, setContextType] = useState<string>('personal');
+  const [paidBy, setPaidBy] = useState<string>(user?.id || '');
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
