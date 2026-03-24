@@ -141,6 +141,23 @@ const Settings = () => {
                 {creatingCouple ? 'Criando acesso...' : 'Criar Acesso Casal'}
               </Button>
             </form>
+
+            <div className="mt-8 pt-8 border-t">
+              <p className="text-xs text-muted-foreground uppercase font-semibold mb-2">Estado da Conexão</p>
+              <div className="flex items-center gap-2 p-3 bg-secondary/30 rounded-lg text-sm">
+                <div className={`w-2 h-2 rounded-full ${user?.user_metadata?.created_by ? 'bg-blue-500' : 'bg-green-500'}`} />
+                <span>
+                  {user?.user_metadata?.created_by 
+                    ? `Acesso Casal vinculado ao ID: ${user.user_metadata.created_by.slice(0, 8)}...` 
+                    : `Conta Principal (ID: ${user?.id?.slice(0, 8)}...)`}
+                </span>
+              </div>
+              {user?.user_metadata?.created_by && (
+                <p className="text-[10px] text-muted-foreground mt-2">
+                  Você está compartilhando os dados da Empresa com o proprietário desta conta.
+                </p>
+              )}
+            </div>
           </CardContent>
         </Card>
 
