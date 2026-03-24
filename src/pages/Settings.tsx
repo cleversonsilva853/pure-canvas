@@ -28,6 +28,7 @@ const Settings = () => {
   const [couplePassword, setCouplePassword] = useState('');
   const [creatingCouple, setCreatingCouple] = useState(false);
   const [memberName, setMemberName] = useState('');
+  const [memberUserId, setMemberUserId] = useState('');
   const [loadingMembers, setLoadingMembers] = useState(false);
 
   const { data: members = [], refetch: refetchMembers } = useQuery({
@@ -44,18 +45,24 @@ const Settings = () => {
     if (!user || !memberName) return;
     setLoadingMembers(true);
     try {
+      // Use the first member's couple_id if exists, otherwise create new
       let coupleId = members[0]?.couple_id || crypto.randomUUID();
+      
+      // If memberUserId is provided, use it. Otherwise use current user ID.
+      const targetUserId = memberUserId.trim() || user.id;
+
       const { error } = await supabase.from('couple_members').insert({
         couple_id: coupleId,
-        user_id: user.id,
+        user_id: targetUserId,
         name: memberName
       });
       if (error) throw error;
-      toast.success('Membro adicionado!');
+      toast.success('Membro vinculado!');
       setMemberName('');
+      setMemberUserId('');
       refetchMembers();
     } catch (error: any) {
-      toast.error(error.message || 'Erro ao adicionar membro');
+      toast.error(error.message || 'Erro ao vincular membro');
     } finally {
       setLoadingMembers(false);
     }
@@ -73,6 +80,12 @@ const Settings = () => {
   };
 
   const handleCreateCoupleAccount = async (e: React.FormEvent) => {
+// ... (rest of the handleCreateCoupleAccount logic)
+// I'll skip some lines but the replace_file_content tool needs the exact content.
+
+// Wait, I should make sure I don't delete handleCreateCoupleAccount by mistake.
+// Let's rewrite the replacement chunk to be more precise.
+
     e.preventDefault();
     setCreatingCouple(true);
     try {
@@ -184,12 +197,28 @@ const Settings = () => {
 
               <div className="space-y-4">
                 <p className="text-sm font-semibold">Participantes (Para o Dashboard)</p>
-                <form onSubmit={handleAddMember} className="flex gap-2">
-                  <Input placeholder="Nome do membro" value={memberName} onChange={(e) => setMemberName(e.target.value)} />
-                  <Button type="submit" disabled={loadingMembers} size="icon">
-                    <PlusIcon className="w-4 h-4" />
-                  </Button>
+                <form onSubmit={handleAddMember} className="space-y-2">
+                  <Input 
+                    placeholder="Nome do membro" 
+                    value={memberName} 
+                    onChange={(e) => setMemberName(e.target.value)} 
+                    required
+                  />
+                  <div className="flex gap-2">
+                    <Input 
+                      placeholder="ID de Acesso do parceiro (Opcional)" 
+                      value={memberUserId} 
+                      onChange={(e) => setMemberUserId(e.target.value)}
+                      className="text-xs font-mono"
+                    />
+                    <Button type="submit" disabled={loadingMembers} size="icon" className="shrink-0">
+                      <PlusIcon className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </form>
+                <p className="text-[10px] text-muted-foreground px-1">
+                  * Deixe o ID vazio para cadastrar a si mesmo.
+                </p>
                 <div className="space-y-2 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
                   {members.length === 0 ? (
                     <p className="text-xs text-muted-foreground italic">Nenhum membro cadastrado.</p>
