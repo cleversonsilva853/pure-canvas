@@ -3,7 +3,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { AlertTriangle, Trash2, RefreshCw } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { AlertTriangle, Trash2, RefreshCw, Users } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   AlertDialog,
@@ -22,6 +24,33 @@ const Settings = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [loading, setLoading] = useState(false);
+  const [coupleEmail, setCoupleEmail] = useState('');
+  const [couplePassword, setCouplePassword] = useState('');
+  const [creatingCouple, setCreatingCouple] = useState(false);
+
+  const handleCreateCoupleAccount = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setCreatingCouple(true);
+    try {
+      const { error } = await supabase.auth.signUp({
+        email: coupleEmail,
+        password: couplePassword,
+        options: {
+          data: {
+            full_name: 'Conta Casal'
+          }
+        }
+      });
+      if (error) throw error;
+      toast.success('Conta casal criada! Você já pode acessá-la saindo da sua conta atual.');
+      setCoupleEmail('');
+      setCouplePassword('');
+    } catch (error: any) {
+      toast.error(error.message || 'Erro ao criar conta casal');
+    } finally {
+      setCreatingCouple(false);
+    }
+  };
 
   const handleResetData = async () => {
     if (!user) return;
@@ -70,6 +99,47 @@ const Settings = () => {
       </div>
 
       <div className="grid gap-6">
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Users className="h-5 w-5 text-primary" />
+              <CardTitle>Acesso Casal</CardTitle>
+            </div>
+            <CardDescription>
+              Crie um login exclusivo para usar como Financeiro do Casal. Tudo que vocês lançarem nesta conta ficará isolado (100% separado) das suas transações pessoais.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleCreateCoupleAccount} className="space-y-4 max-w-sm">
+              <div className="space-y-2">
+                <Label htmlFor="couple-email">Email de Acesso (Casal)</Label>
+                <Input 
+                  id="couple-email" 
+                  type="email" 
+                  value={coupleEmail} 
+                  onChange={(e) => setCoupleEmail(e.target.value)} 
+                  required 
+                  placeholder="casal@exceplo.com"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="couple-password">Senha de Acesso</Label>
+                <Input 
+                  id="couple-password" 
+                  type="password" 
+                  value={couplePassword} 
+                  onChange={(e) => setCouplePassword(e.target.value)} 
+                  required 
+                  minLength={6}
+                />
+              </div>
+              <Button type="submit" disabled={creatingCouple} className="w-full">
+                {creatingCouple ? 'Criando acesso...' : 'Criar Acesso Casal'}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+
         <Card className="border-destructive/20 shadow-sm overflow-hidden">
           <CardHeader className="bg-destructive/5 border-b border-destructive/10">
             <div className="flex items-center gap-2 text-destructive">
