@@ -19,7 +19,7 @@ import Goals from "@/pages/Goals";
 import Reports from "@/pages/Reports";
 import Categories from "@/pages/Categories";
 import Settings from "@/pages/Settings";
-import CoupleDashboard from "@/pages/CoupleDashboard";
+
 import NotFound from "@/pages/NotFound";
 import BusinessDashboard from "@/pages/BusinessDashboard";
 import BusinessExpenses from "@/pages/BusinessExpenses";
