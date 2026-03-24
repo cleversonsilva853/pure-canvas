@@ -42,7 +42,7 @@ const Settings = () => {
         }
       });
       if (error) throw error;
-      toast.success('Conta casal criada! Você já pode acessá-la saindo da sua conta atual.');
+      toast.success('Conta casal criada! Verifique a caixa de entrada do email informado para confirmar a conta antes de acessar.');
       setCoupleEmail('');
       setCouplePassword('');
     } catch (error: any) {
@@ -107,6 +107,8 @@ const Settings = () => {
             </div>
             <CardDescription>
               Crie um login exclusivo para usar como Financeiro do Casal. Tudo que vocês lançarem nesta conta ficará isolado (100% separado) das suas transações pessoais.
+              <br/><br/>
+              <strong>Atenção:</strong> Use um email real, pois será necessário confirmar o email antes do primeiro acesso.
             </CardDescription>
           </CardHeader>
           <CardContent>
