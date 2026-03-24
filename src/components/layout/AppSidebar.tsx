@@ -123,33 +123,6 @@ const AppSidebar = () => {
           ))}
         </nav>
 
-        {/* User Profile */}
-        <div className={cn('p-3 border-t border-border', collapsed && 'flex flex-col items-center')}>
-          <div className={cn(
-            "flex items-center gap-3 p-2 rounded-xl bg-secondary/30 mb-2 transition-all",
-            collapsed ? "w-10 h-10 p-0 justify-center" : "w-full"
-          )}>
-            <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
-              <UserIcon className="h-4 w-4 text-primary" />
-            </div>
-            {!collapsed && (
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold truncate leading-none mb-1">
-                  {user?.user_metadata?.full_name || 'Usuário'}
-                </p>
-                <p className="text-[10px] text-muted-foreground truncate leading-none">
-                  {user?.email}
-                </p>
-              </div>
-            )}
-          </div>
-          {!collapsed && user?.user_metadata?.created_by && (
-            <div className="px-2 py-1 rounded-md bg-blue-500/10 text-blue-500 text-[10px] font-bold uppercase tracking-wider text-center mb-2">
-              Acesso Casal
-            </div>
-          )}
-        </div>
-
         {/* Bottom */}
         <div className="p-3 border-t border-border space-y-1">
           <button

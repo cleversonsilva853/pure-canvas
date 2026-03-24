@@ -10,9 +10,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { Plus, TrendingUp, TrendingDown, Search, Filter, Trash2, User, Building2, Heart } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useCoupleMembers } from '@/hooks/useFinanceData';
+import { Plus, TrendingUp, TrendingDown, Search, Filter, Trash2 } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 const formatCurrency = (value: number) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
@@ -29,12 +28,9 @@ const Transactions = () => {
   const { data: categories = [] } = useCategories();
   const { data: budgets = [] } = useBudgets();
   const { data: creditCards = [] } = useCreditCards();
-  const { data: coupleMembers = [] } = useCoupleMembers();
 
   // Form state
   const [type, setType] = useState<string>('expense');
-  const [contextType, setContextType] = useState<string>('personal');
-  const [paidBy, setPaidBy] = useState<string>(user?.id || '');
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
@@ -66,24 +62,8 @@ const Transactions = () => {
     setLoading(true);
 
     try {
-      const ownerId = (contextType === 'couple' || contextType === 'business') 
-        ? (user.user_metadata?.created_by || user.id) 
-        : user.id;
-
-      // Ensure paid_by is a valid UUID or user.id
-      let finalPaidBy = user.id;
-      if (contextType === 'couple') {
-        if (paidBy && paidBy !== 'spouse') {
-          finalPaidBy = paidBy;
-        } else {
-          // If no specific spouse ID, just use the logged in user as fallback
-          // or warn the user. For now, fallback to user.id to avoid crash.
-          finalPaidBy = user.id;
-        }
-      }
-
       const { error } = await supabase.from('transactions').insert({
-        user_id: ownerId,
+        user_id: user.id,
         type,
         amount: parseFloat(amount),
         description,
@@ -92,8 +72,6 @@ const Transactions = () => {
         account_id: accountId || null,
         credit_card_id: creditCardId && creditCardId !== 'none' ? creditCardId : null,
         is_paid: !creditCardId || creditCardId === 'none',
-        context_type: contextType,
-        paid_by: finalPaidBy,
       });
       if (error) throw error;
 
@@ -132,8 +110,6 @@ const Transactions = () => {
 
   const resetForm = () => {
     setType('expense');
-    setContextType('personal');
-    setPaidBy(user?.id || '');
     setAmount('');
     setDescription('');
     setDate(new Date().toISOString().split('T')[0]);
@@ -185,43 +161,6 @@ const Transactions = () => {
                   Receita
                 </Button>
               </div>
-
-              <div className="space-y-2">
-                <Label>Aplicar em:</Label>
-                <Select value={contextType} onValueChange={setContextType}>
-                  <SelectTrigger><SelectValue placeholder="Selecione o Contexto" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="personal">Meu financeiro</SelectItem>
-                    <SelectItem value="couple">Casal</SelectItem>
-                    <SelectItem value="business">Empresa</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <AnimatePresence>
-                {contextType === 'couple' && (
-                  <motion.div 
-                    initial={{ height: 0, opacity: 0 }} 
-                    animate={{ height: 'auto', opacity: 1 }} 
-                    exit={{ height: 0, opacity: 0 }}
-                    className="space-y-2 overflow-hidden"
-                  >
-                    <Label>Quem pagou?</Label>
-                    <Select value={paidBy} onValueChange={setPaidBy}>
-                      <SelectTrigger><SelectValue placeholder="Selecione quem pagou" /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value={user?.id || 'me'}>Eu ({user?.user_metadata?.full_name?.split(' ')[0] || 'Logado'})</SelectItem>
-                        {coupleMembers.filter(m => m.user_id !== user?.id).map((member) => (
-                          <SelectItem key={member.id} value={member.user_id}>{member.name}</SelectItem>
-                        ))}
-                        {coupleMembers.length <= 1 && (
-                          <SelectItem value="spouse">Parceiro(a)</SelectItem>
-                        )}
-                      </SelectContent>
-                    </Select>
-                  </motion.div>
-                )}
-              </AnimatePresence>
               <div className="space-y-2">
                 <Label>Valor</Label>
                 <Input
@@ -346,29 +285,12 @@ const Transactions = () => {
                       )}
                     </div>
                     <div>
-                      <div className="flex items-center gap-2">
-                        <p className="text-sm font-medium">{t.description || 'Sem descrição'}</p>
-                        {t.context_type === 'couple' && (
-                          <span className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-pink-500/10 text-pink-500 text-[10px] font-bold">
-                            <Heart className="h-2 w-2" /> CASAL
-                          </span>
-                        )}
-                        {t.context_type === 'business' && (
-                          <span className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-500 text-[10px] font-bold">
-                            <Building2 className="h-2 w-2" /> EMPRESA
-                          </span>
-                        )}
-                      </div>
+                      <p className="text-sm font-medium">{t.description || 'Sem descrição'}</p>
                       <p className="text-xs text-muted-foreground">
                         {new Date(t.date).toLocaleDateString('pt-BR')}
                         {(t.category as any)?.name ? ` • ${(t.category as any).name}` : ''}
                         {(t.account as any)?.name ? ` • ${(t.account as any).name}` : ''}
                         {(t as any).card?.name ? ` • 💳 ${(t as any).card.name}` : ''}
-                        {t.context_type === 'couple' && t.paid_by && (
-                          <span className="text-pink-500/80 italic">
-                            {` • Pago por: ${t.paid_by === user?.id ? 'Mim' : 'Outro'}`}
-                          </span>
-                        )}
                       </p>
                     </div>
                   </div>
