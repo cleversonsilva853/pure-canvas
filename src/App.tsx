@@ -60,7 +60,7 @@ const App = () => (
                 <Route path="/auth" element={<AuthRoute />} />
                 <Route path="/" element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
                   <Route index element={<Index />} />
-                  <Route path="couple-dashboard" element={<CoupleDashboard />} />
+                  
                   <Route path="transactions" element={<Transactions />} />
                   <Route path="accounts" element={<Accounts />} />
                   <Route path="credit-cards" element={<CreditCards />} />
