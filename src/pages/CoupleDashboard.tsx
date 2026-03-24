@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useCoupleTransactions } from '@/hooks/useFinanceData';
+import { useCoupleTransactions, useCoupleMembers } from '@/hooks/useFinanceData';
 import {
   Wallet,
   TrendingUp,
@@ -12,6 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { cn } from '@/lib/utils';
 import {
   BarChart,
   Bar,
@@ -42,6 +43,15 @@ const cardVariants = {
 const CoupleDashboard = () => {
   const navigate = useNavigate();
   const { data: transactions = [], isLoading } = useCoupleTransactions();
+  const { data: members = [] } = useCoupleMembers();
+
+  const memberNames = useMemo(() => {
+    const map = new Map<string, string>();
+    members.forEach(m => {
+      map.set(m.user_id, m.name);
+    });
+    return map;
+  }, [members]);
 
   const { totalIncome, totalExpense } = useMemo(() => {
     let income = 0;
@@ -52,6 +62,16 @@ const CoupleDashboard = () => {
     });
     return { totalIncome: income, totalExpense: expense };
   }, [transactions]);
+
+  // ... (rest of the logic remains same, just update the rendering part below)
+  
+  // Updating transactions map to use memberNames
+  const lastTransactions = useMemo(() => {
+    return transactions.slice(0, 10).map(t => {
+      const name = memberNames.get(t.user_id) || 'Privado';
+      return { ...t, authorName: name };
+    });
+  }, [transactions, memberNames]);
 
   const categoryExpenses = useMemo(() => {
     const map = new Map<string, { name: string; value: number; color: string }>();
@@ -251,8 +271,8 @@ const CoupleDashboard = () => {
               <p className="text-sm text-muted-foreground">Nenhuma transação registrada este mês.</p>
             ) : (
               <div className="space-y-3">
-                {transactions.slice(0, 10).map((t) => (
-                  <div key={t.id} className="flex items-center justify-between p-3 rounded-xl hover:bg-secondary/50 transition-colors">
+                {lastTransactions.map((t) => (
+                  <div key={t.id} className="flex items-center justify-between p-3 rounded-xl hover:bg-secondary/50 transition-colors border border-transparent hover:border-border/40">
                     <div className="flex items-center gap-3">
                       <div
                         className={`p-2 rounded-xl ${t.type === 'income' ? 'bg-accent/10' : 'bg-destructive/10'}`}
@@ -268,7 +288,12 @@ const CoupleDashboard = () => {
                         <p className="text-xs text-muted-foreground flex items-center gap-1">
                           {new Date(t.date).toLocaleDateString('pt-BR')}
                           {(t.category as any)?.name ? ` • ${(t.category as any).name}` : ''}
-                          <span className="ml-1 opacity-70 italic">({(t as any).user_id === transactions[0]?.user_id ? 'Mim' : 'Outro'})</span>
+                          <span className={cn(
+                            "ml-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold uppercase",
+                            t.user_id === transactions[0]?.user_id ? "bg-primary/10 text-primary" : "bg-blue-500/10 text-blue-600"
+                          )}>
+                            {t.authorName}
+                          </span>
                         </p>
                       </div>
                     </div>

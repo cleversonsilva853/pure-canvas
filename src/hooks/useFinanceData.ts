@@ -140,6 +140,21 @@ export const useBudgets = (month?: number, year?: number) => {
   });
 };
 
+export const useCoupleMembers = () => {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: ['couple_members', user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('couple_members')
+        .select('*');
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user,
+  });
+};
+
 export const useCoupleTransactions = (month?: number, year?: number) => {
   const { user } = useAuth();
   const now = new Date();
