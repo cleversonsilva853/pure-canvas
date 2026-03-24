@@ -115,9 +115,9 @@ const Settings = () => {
     if (!user) return;
     setLoading(true);
     try {
-      const tables = ['transactions', 'budgets', 'goals', 'accounts', 'credit_cards', 'categories'];
+      const tables = ['transactions', 'budgets', 'goals', 'accounts', 'credit_cards', 'categories'] as const;
       for (const table of tables) {
-        const { error } = await supabase.from(table).delete().eq('user_id', user.id);
+        const { error } = await (supabase.from(table) as any).delete().eq('user_id', user.id);
         if (error) throw new Error(`Erro em ${table}: ${error.message}`);
       }
       toast.success('Dados pessoais apagados!');
