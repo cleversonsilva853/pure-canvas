@@ -24,14 +24,13 @@ const BusinessProducts = () => {
     const data = {
       name: form.name,
       sale_price: Number(form.sale_price),
-      cost_price: Number(form.cost_price),
       stock: form.stock ? Number(form.stock) : undefined,
     };
 
     if (editingId) {
-      await updateProduct.mutateAsync({ id: editingId, ...data });
+      await updateProduct.mutateAsync({ id: editingId, cost_price: 0, ...data });
     } else {
-      await createProduct.mutateAsync(data);
+      await createProduct.mutateAsync({ ...data, cost_price: 0 });
     }
 
     handleClose();
@@ -42,7 +41,7 @@ const BusinessProducts = () => {
     setForm({
       name: product.name,
       sale_price: String(product.sale_price),
-      cost_price: String(product.cost_price),
+      cost_price: '0',
       stock: product.stock ? String(product.stock) : '',
     });
     setOpen(true);
@@ -65,7 +64,6 @@ const BusinessProducts = () => {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div><Label>Nome</Label><Input required value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} /></div>
               <div><Label>Valor de Venda (R$)</Label><Input required type="number" step="0.01" min="0" value={form.sale_price} onChange={e => setForm(f => ({ ...f, sale_price: e.target.value }))} /></div>
-              <div><Label>Custo (R$)</Label><Input required type="number" step="0.01" min="0" value={form.cost_price} onChange={e => setForm(f => ({ ...f, cost_price: e.target.value }))} /></div>
               <div><Label>Estoque (opcional)</Label><Input type="number" min="0" value={form.stock} onChange={e => setForm(f => ({ ...f, stock: e.target.value }))} /></div>
               <Button type="submit" className="w-full" disabled={createProduct.isPending || updateProduct.isPending}>
                 {editingId ? 'Atualizar' : 'Salvar'}
@@ -80,14 +78,12 @@ const BusinessProducts = () => {
         <CardContent>
           {isLoading ? <p className="text-muted-foreground text-sm">Carregando...</p> : products.length === 0 ? <p className="text-muted-foreground text-sm">Nenhum produto cadastrado.</p> : (
             <Table>
-              <TableHeader><TableRow><TableHead>Nome</TableHead><TableHead>Venda</TableHead><TableHead>Custo</TableHead><TableHead>Lucro</TableHead><TableHead>Estoque</TableHead><TableHead className="text-right">Ações</TableHead></TableRow></TableHeader>
+              <TableHeader><TableRow><TableHead>Nome</TableHead><TableHead>Preço de Venda</TableHead><TableHead>Estoque</TableHead><TableHead className="text-right">Ações</TableHead></TableRow></TableHeader>
               <TableBody>
                 {products.map(p => (
                   <TableRow key={p.id}>
                     <TableCell className="font-medium">{p.name}</TableCell>
                     <TableCell>{fmt(Number(p.sale_price))}</TableCell>
-                    <TableCell>{fmt(Number(p.cost_price))}</TableCell>
-                    <TableCell className={Number(p.sale_price) - Number(p.cost_price) >= 0 ? 'text-emerald-600' : 'text-red-500'}>{fmt(Number(p.sale_price) - Number(p.cost_price))}</TableCell>
                     <TableCell>{p.stock ?? '-'}</TableCell>
                     <TableCell className="text-right space-x-2">
                       <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEdit(p)}>
