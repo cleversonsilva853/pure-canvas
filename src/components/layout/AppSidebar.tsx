@@ -101,6 +101,28 @@ const AppSidebar = () => {
           </div>
         )}
 
+        {/* User identification */}
+        {!collapsed && user && (
+          <div className="mx-3 mt-3 px-3 py-2 rounded-xl bg-muted/50 border border-border/50">
+            <div className="flex items-center justify-between mb-1">
+              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Perfil</p>
+              <div className="flex items-center gap-1">
+                <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                <span className="text-[10px] font-bold text-green-600">ONLINE</span>
+              </div>
+            </div>
+            <p className="text-xs font-semibold truncate leading-tight">{user.email}</p>
+            <div className="flex items-center gap-1.5 mt-1 opacity-80">
+              <div className={`w-1.5 h-1.5 rounded-full ${user.user_metadata?.created_by ? 'bg-blue-500' : 'bg-green-500'}`} />
+              <span className="text-[9px] font-bold text-muted-foreground uppercase">
+                {user.user_metadata?.created_by ? 'PARCEIRO' : 'PRINCIPAL'}
+              </span>
+              <span className="text-[9px] text-muted-foreground/60">•</span>
+              <span className="text-[9px] font-mono text-muted-foreground/60">{user.id.slice(0, 5)}</span>
+            </div>
+          </div>
+        )}
+
         {/* Nav */}
         <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
           {!collapsed && (
