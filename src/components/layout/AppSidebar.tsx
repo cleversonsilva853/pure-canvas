@@ -25,6 +25,7 @@ import {
   LineChart,
   User as UserIcon,
   Heart,
+  TrendingUp,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState, useEffect } from 'react';
@@ -48,6 +49,7 @@ const businessNavItems = [
   { to: '/business/expenses', icon: Receipt, label: 'Despesas' },
   { to: '/business/sales', icon: ShoppingCart, label: 'Vendas' },
   { to: '/business/products', icon: Package, label: 'Produtos' },
+  { to: '/business/pricing', icon: TrendingUp, label: 'Precificação' },
   { to: '/business/dre', icon: LineChart, label: 'DRE' },
 ];
 

@@ -182,3 +182,117 @@ export const useDeleteBusinessSale = () => {
   });
 };
 
+// ---- Business Ingredients (Insumos) ----
+export const useBusinessIngredients = () => {
+  const { user } = useAuth();
+  const ownerId = user?.user_metadata?.created_by || user?.id;
+
+  return useQuery({
+    queryKey: ['business_ingredients', ownerId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('business_ingredients')
+        .select('*')
+        .eq('user_id', ownerId)
+        .order('name', { ascending: true });
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user,
+  });
+};
+
+export const useCreateBusinessIngredient = () => {
+  const { user } = useAuth();
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  const ownerId = user?.user_metadata?.created_by || user?.id;
+
+  return useMutation({
+    mutationFn: async (values: { name: string; unit: string; purchase_price: number; purchase_quantity: number }) => {
+      const { error } = await supabase.from('business_ingredients').insert({ ...values, user_id: ownerId });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['business_ingredients'] });
+      toast({ title: 'Insumo cadastrado!' });
+    },
+    onError: () => toast({ title: 'Erro ao cadastrar insumo', variant: 'destructive' }),
+  });
+};
+
+export const useUpdateBusinessIngredient = () => {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: async (values: { id: string; name: string; unit: string; purchase_price: number; purchase_quantity: number }) => {
+      const { id, ...updateValues } = values;
+      const { error } = await supabase.from('business_ingredients').update(updateValues).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['business_ingredients'] });
+      toast({ title: 'Insumo atualizado!' });
+    },
+    onError: () => toast({ title: 'Erro ao atualizar insumo', variant: 'destructive' }),
+  });
+};
+
+export const useDeleteBusinessIngredient = () => {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('business_ingredients').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['business_ingredients'] });
+      toast({ title: 'Insumo removido!' });
+    },
+  });
+};
+
+// ---- Business Product Composition (Ficha Técnica) ----
+export const useBusinessProductCompositions = (productId?: string) => {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: ['business_product_compositions', productId],
+    queryFn: async () => {
+      if (!productId) return [];
+      const { data, error } = await supabase
+        .from('business_product_compositions')
+        .select('*, ingredient:business_ingredients(*)')
+        .eq('product_id', productId);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user && !!productId,
+  });
+};
+
+export const useUpdateProductComposition = () => {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async ({ productId, compositions }: { productId: string; compositions: { ingredient_id: string; quantity: number }[] }) => {
+      // Deletar composições antigas
+      const { error: deleteError } = await supabase.from('business_product_compositions').delete().eq('product_id', productId);
+      if (deleteError) throw deleteError;
+
+      // Inserir novas
+      if (compositions.length > 0) {
+        const { error: insertError } = await supabase.from('business_product_compositions').insert(
+          compositions.map(c => ({ ...c, product_id: productId }))
+        );
+        if (insertError) throw insertError;
+      }
+    },
+    onSuccess: (_, { productId }) => {
+      qc.invalidateQueries({ queryKey: ['business_product_compositions', productId] });
+      toast({ title: 'Ficha técnica atualizada!' });
+    },
+    onError: () => toast({ title: 'Erro ao atualizar ficha técnica', variant: 'destructive' }),
+  });
+};
