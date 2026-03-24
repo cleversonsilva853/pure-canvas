@@ -38,6 +38,25 @@ export const useCategories = () => {
   });
 };
 
+export const useCoupleGoals = () => {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: ['couple-goals', user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+
+      const { data, error } = await supabase
+        .from('goals')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user,
+  });
+};
+
 export const useTransactions = (month?: number, year?: number) => {
   const { user } = useAuth();
   const now = new Date();

@@ -1,6 +1,8 @@
 import { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useCoupleTransactions, useCoupleMembers } from '@/hooks/useFinanceData';
+import { useCoupleTransactions, useCoupleMembers, useCoupleGoals } from '@/hooks/useFinanceData';
+import { useAuth } from '@/hooks/useAuth';
+import { Progress } from '@/components/ui/progress';
 import {
   Wallet,
   TrendingUp,
@@ -8,6 +10,7 @@ import {
   ArrowUpDown,
   Heart,
   Plus,
+  Target,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
@@ -42,8 +45,12 @@ const cardVariants = {
 
 const CoupleDashboard = () => {
   const navigate = useNavigate();
-  const { data: transactions = [], isLoading } = useCoupleTransactions();
+  const { user } = useAuth();
+  const { data: transactions = [], isLoading: loadingTransactions } = useCoupleTransactions();
   const { data: members = [] } = useCoupleMembers();
+  const { data: goals = [], isLoading: loadingGoals } = useCoupleGoals();
+
+  const isLoading = loadingTransactions || loadingGoals;
 
   const memberNames = useMemo(() => {
     const map = new Map<string, string>();
@@ -72,6 +79,15 @@ const CoupleDashboard = () => {
       return { ...t, authorName: name };
     });
   }, [transactions, memberNames]);
+
+  const goalsWithProgress = useMemo(() => {
+    return goals.map(g => {
+      const progress = Math.min(Math.round((Number(g.current_amount) / Number(g.target_amount)) * 100), 100);
+      const name = memberNames.get(g.user_id) || 'Privado';
+      const isOwner = g.user_id === user?.id;
+      return { ...g, progress, authorName: name, isOwner };
+    });
+  }, [goals, memberNames, user?.id]);
 
   const categoryExpenses = useMemo(() => {
     const map = new Map<string, { name: string; value: number; color: string }>();
@@ -256,6 +272,50 @@ const CoupleDashboard = () => {
           </Card>
         </motion.div>
       </div>
+
+      {/* Couple Goals Section */}
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.55 }}>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Target className="h-5 w-5 text-primary" />
+              <CardTitle className="text-base">Nossas Metas e Sonhos</CardTitle>
+            </div>
+            <Button variant="ghost" size="sm" onClick={() => navigate('/goals')}>
+              Ver todas
+            </Button>
+          </CardHeader>
+          <CardContent>
+            {goals.length === 0 ? (
+              <p className="text-sm text-muted-foreground italic">Nenhuma meta cadastrada ainda.</p>
+            ) : (
+              <div className="grid md:grid-cols-2 gap-4">
+                {goalsWithProgress.slice(0, 4).map((goal) => (
+                  <div key={goal.id} className="p-4 rounded-xl bg-secondary/30 border border-border/50">
+                    <div className="flex justify-between items-start mb-2">
+                      <div>
+                        <h4 className="font-semibold text-sm">{goal.title}</h4>
+                        <span className={cn(
+                          "px-1.5 py-0.5 rounded-full text-[9px] font-bold uppercase",
+                          goal.isOwner ? "bg-primary/10 text-primary" : "bg-blue-500/10 text-blue-600"
+                        )}>
+                          {goal.authorName}
+                        </span>
+                      </div>
+                      <span className="text-xs font-bold text-primary">{goal.progress}%</span>
+                    </div>
+                    <Progress value={goal.progress} className="h-1.5 mb-2" />
+                    <div className="flex justify-between text-[10px] text-muted-foreground font-medium">
+                      <span>{formatCurrency(Number(goal.current_amount))}</span>
+                      <span>de {formatCurrency(Number(goal.target_amount))}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </motion.div>
 
       {/* Recent Transactions (Both Accounts) */}
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }}>
