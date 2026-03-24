@@ -144,13 +144,26 @@ const Settings = () => {
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">ID de Acesso</span>
+              <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Seu ID de Acesso</span>
               <div className="flex items-center gap-1 bg-green-500/10 text-green-600 px-2 py-0.5 rounded-full text-[10px] font-bold">
                 <div className="w-1 h-1 rounded-full bg-green-500 animate-pulse" />
                 ONLINE
               </div>
             </div>
-            <p className="font-mono text-sm font-semibold">{user?.id?.slice(0, 16)}...</p>
+            <div className="flex items-center gap-2 mt-1">
+              <p className="font-mono text-xs font-semibold select-all">{user?.id}</p>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-6 w-6 hover:bg-primary/10" 
+                onClick={() => {
+                  navigator.clipboard.writeText(user?.id || '');
+                  toast.success('ID copiado!');
+                }}
+              >
+                <PlusIcon className="w-3 h-3 rotate-45" /> {/* Using Plus rotated as a small copy/action icon or just use Lucide Copy if imported */}
+              </Button>
+            </div>
           </div>
         </div>
       </div>

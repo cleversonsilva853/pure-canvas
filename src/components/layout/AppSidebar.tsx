@@ -118,7 +118,7 @@ const AppSidebar = () => {
                 {user.user_metadata?.created_by ? 'PARCEIRO' : 'PRINCIPAL'}
               </span>
               <span className="text-[9px] text-muted-foreground/60">•</span>
-              <span className="text-[9px] font-mono text-muted-foreground/60">{user.id.slice(0, 5)}</span>
+              <span className="text-[9px] font-mono text-muted-foreground/60 select-all">{user.id}</span>
             </div>
           </div>
         )}
