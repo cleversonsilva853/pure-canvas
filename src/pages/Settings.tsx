@@ -155,24 +155,32 @@ const Settings = () => {
           </CardHeader>
           <CardContent className="space-y-8">
             <div className="grid md:grid-cols-2 gap-8">
-              <form onSubmit={handleCreateCoupleAccount} className="space-y-4">
-                <div className="p-3 rounded-xl bg-primary/5 border border-primary/10">
-                  <p className="text-sm font-semibold mb-3">Criar Novo Acesso Casal</p>
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label>Email do Parceiro(a)</Label>
-                      <Input type="email" value={coupleEmail} onChange={(e) => setCoupleEmail(e.target.value)} required placeholder="casal@exemplo.com" />
+              {!user?.user_metadata?.created_by ? (
+                <form onSubmit={handleCreateCoupleAccount} className="space-y-4">
+                  <div className="p-3 rounded-xl bg-primary/5 border border-primary/10">
+                    <p className="text-sm font-semibold mb-3">Criar Novo Acesso Casal</p>
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label>Email do Parceiro(a)</Label>
+                        <Input type="email" value={coupleEmail} onChange={(e) => setCoupleEmail(e.target.value)} required placeholder="casal@exemplo.com" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Senha Temporária</Label>
+                        <Input type="password" value={couplePassword} onChange={(e) => setCouplePassword(e.target.value)} required minLength={6} />
+                      </div>
+                      <Button type="submit" disabled={creatingCouple} className="w-full">
+                        {creatingCouple ? 'Criando...' : 'Criar Conta de Acesso'}
+                      </Button>
                     </div>
-                    <div className="space-y-2">
-                      <Label>Senha Temporária</Label>
-                      <Input type="password" value={couplePassword} onChange={(e) => setCouplePassword(e.target.value)} required minLength={6} />
-                    </div>
-                    <Button type="submit" disabled={creatingCouple} className="w-full">
-                      {creatingCouple ? 'Criando...' : 'Criar Conta de Acesso'}
-                    </Button>
                   </div>
+                </form>
+              ) : (
+                <div className="p-4 rounded-xl bg-muted border border-border flex flex-col items-center justify-center text-center">
+                  <Shield className="w-8 h-8 text-muted-foreground mb-2" />
+                  <p className="text-sm font-semibold">Acesso Restrito</p>
+                  <p className="text-xs text-muted-foreground">Apenas o administrador da conta principal pode criar novos acessos.</p>
                 </div>
-              </form>
+              )}
 
               <div className="space-y-4">
                 <p className="text-sm font-semibold">Participantes (Para o Dashboard)</p>
