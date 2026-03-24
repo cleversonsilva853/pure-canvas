@@ -139,3 +139,43 @@ export const useBudgets = (month?: number, year?: number) => {
     enabled: !!user,
   });
 };
+
+export const useCoupleTransactions = (month?: number, year?: number) => {
+  const { user } = useAuth();
+  const now = new Date();
+  const m = month ?? now.getMonth() + 1;
+  const y = year ?? now.getFullYear();
+
+  return useQuery({
+    queryKey: ['couple_transactions', user?.id, m, y],
+    queryFn: async () => {
+      const startDate = `${y}-${String(m).padStart(2, '0')}-01`;
+      const endDate = m === 12
+        ? `${y + 1}-01-01`
+        : `${y}-${String(m + 1).padStart(2, '0')}-01`;
+
+      // 1. Get current user's transactions
+      // 2. Try to get partner's transactions (searching by created_by link)
+      const mainId = user?.user_metadata?.created_by || user?.id;
+      
+      // Fetch transactions where user_id is the main ID OR where the user_id's created_by is the main ID
+      // Since RLS might be tricky, we'll try to fetch all that the user has permission to see
+      // In a real scenario, the RLS policy "Users can see shared transactions" from the walkthrough 
+      // is what enables this.
+      
+      const { data, error } = await supabase
+        .from('transactions')
+        .select('*, category:categories(*), account:accounts(*), card:credit_cards(*)')
+        .gte('date', startDate)
+        .lt('date', endDate)
+        .order('date', { ascending: false });
+
+      if (error) throw error;
+      
+      // Filter here if RLS returns more than needed, but ideally RLS handles it.
+      // For the Dashboard, we want the SUM, so we return all visible trans.
+      return data;
+    },
+    enabled: !!user,
+  });
+};

@@ -24,6 +24,7 @@ import {
   Settings as SettingsIcon,
   LineChart,
   User as UserIcon,
+  Heart,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState, useEffect } from 'react';
@@ -31,6 +32,7 @@ import ModeSelector from '@/components/ModeSelector';
 
 const personalNavItems = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
+  { to: '/couple-dashboard', icon: Heart, label: 'Dashboard Casal' },
   { to: '/transactions', icon: ArrowUpDown, label: 'Transações' },
   { to: '/categories', icon: Tag, label: 'Categorias' },
   { to: '/accounts', icon: Landmark, label: 'Contas' },

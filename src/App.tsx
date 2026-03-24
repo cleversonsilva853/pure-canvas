@@ -19,6 +19,7 @@ import Goals from "@/pages/Goals";
 import Reports from "@/pages/Reports";
 import Categories from "@/pages/Categories";
 import Settings from "@/pages/Settings";
+import CoupleDashboard from "@/pages/CoupleDashboard";
 import NotFound from "@/pages/NotFound";
 import BusinessDashboard from "@/pages/BusinessDashboard";
 import BusinessExpenses from "@/pages/BusinessExpenses";
@@ -59,6 +60,7 @@ const App = () => (
                 <Route path="/auth" element={<AuthRoute />} />
                 <Route path="/" element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
                   <Route index element={<Index />} />
+                  <Route path="couple-dashboard" element={<CoupleDashboard />} />
                   <Route path="transactions" element={<Transactions />} />
                   <Route path="accounts" element={<Accounts />} />
                   <Route path="credit-cards" element={<CreditCards />} />
