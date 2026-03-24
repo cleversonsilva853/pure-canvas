@@ -37,7 +37,8 @@ const Settings = () => {
         password: couplePassword,
         options: {
           data: {
-            full_name: 'Conta Casal'
+            full_name: 'Conta Casal',
+            created_by: user?.id
           },
           emailRedirectTo: window.location.origin
         }
