@@ -14,11 +14,14 @@ import {
   TrendingUp, 
   Info,
   Package,
-  ArrowRight
+  ArrowRight,
+  Pencil,
+  X
 } from 'lucide-react';
 import { 
   useBusinessIngredients, 
   useCreateBusinessIngredient, 
+  useUpdateBusinessIngredient,
   useDeleteBusinessIngredient,
   useBusinessProducts,
   useBusinessProductCompositions,
@@ -43,10 +46,12 @@ const BusinessPricing = () => {
   
   // Mutations
   const createIngredient = useCreateBusinessIngredient();
+  const updateIngredient = useUpdateBusinessIngredient();
   const deleteIngredient = useDeleteBusinessIngredient();
   const updateComposition = useUpdateProductComposition();
 
-  // New Ingredient State
+  // Ingredient State
+  const [editingIngId, setEditingIngId] = useState<string | null>(null);
   const [newIng, setNewIng] = useState({ name: '', unit: 'KG', purchase_price: '', purchase_quantity: '' });
   
   // New Composition Entry
@@ -54,14 +59,41 @@ const BusinessPricing = () => {
 
   const handleAddIngredient = (e: React.FormEvent) => {
     e.preventDefault();
-    createIngredient.mutate({
+    
+    const data = {
       name: newIng.name,
       unit: newIng.unit,
       purchase_price: Number(newIng.purchase_price),
       purchase_quantity: Number(newIng.purchase_quantity)
-    }, {
-      onSuccess: () => setNewIng({ name: '', unit: 'KG', purchase_price: '', purchase_quantity: '' })
+    };
+
+    if (editingIngId) {
+      updateIngredient.mutate({ id: editingIngId, ...data }, {
+        onSuccess: () => {
+          setEditingIngId(null);
+          setNewIng({ name: '', unit: 'KG', purchase_price: '', purchase_quantity: '' });
+        }
+      });
+    } else {
+      createIngredient.mutate(data, {
+        onSuccess: () => setNewIng({ name: '', unit: 'KG', purchase_price: '', purchase_quantity: '' })
+      });
+    }
+  };
+
+  const handleEditIngredient = (ing: any) => {
+    setEditingIngId(ing.id);
+    setNewIng({
+      name: ing.name,
+      unit: ing.unit,
+      purchase_price: String(ing.purchase_price),
+      purchase_quantity: String(ing.purchase_quantity)
     });
+  };
+
+  const handleCancelEdit = () => {
+    setEditingIngId(null);
+    setNewIng({ name: '', unit: 'KG', purchase_price: '', purchase_quantity: '' });
   };
 
   const handleAddComposition = (e: React.FormEvent) => {
@@ -144,11 +176,13 @@ const BusinessPricing = () => {
                 exit={{ opacity: 0, x: 20 }}
                 className="grid lg:grid-cols-3 gap-6 mt-6"
               >
-                {/* Add Ingredient Form */}
+                {/* Add/Edit Ingredient Form */}
                 <Card className="lg:col-span-1 shadow-lg border-primary/10">
                   <CardHeader>
-                    <CardTitle className="text-lg">Cadastrar Insumo</CardTitle>
-                    <CardDescription>Cadastre o preço de compra em atacado.</CardDescription>
+                    <CardTitle className="text-lg">{editingIngId ? 'Editar Insumo' : 'Cadastrar Insumo'}</CardTitle>
+                    <CardDescription>
+                      {editingIngId ? 'Ajuste os valores do insumo selecionado.' : 'Cadastre o preço de compra em atacado.'}
+                    </CardDescription>
                   </CardHeader>
                   <CardContent>
                     <form onSubmit={handleAddIngredient} className="space-y-4">
@@ -199,9 +233,25 @@ const BusinessPricing = () => {
                           </SelectContent>
                         </Select>
                       </div>
-                      <Button className="w-full gap-2 rounded-xl" disabled={createIngredient.isPending}>
-                        <Plus className="h-4 w-4" /> Cadastrar Insumo
-                      </Button>
+                      <div className="flex gap-2">
+                        {editingIngId && (
+                          <Button 
+                            type="button" 
+                            variant="outline" 
+                            className="flex-1 rounded-xl"
+                            onClick={handleCancelEdit}
+                          >
+                            <X className="h-4 w-4 mr-2" /> Cancelar
+                          </Button>
+                        )}
+                        <Button 
+                          className="flex-[2] gap-2 rounded-xl" 
+                          disabled={createIngredient.isPending || updateIngredient.isPending}
+                        >
+                          {editingIngId ? <TrendingUp className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+                          {editingIngId ? 'Atualizar Insumo' : 'Cadastrar Insumo'}
+                        </Button>
+                      </div>
                     </form>
                   </CardContent>
                 </Card>
@@ -231,13 +281,22 @@ const BusinessPricing = () => {
                                       Comprado: {ing.purchase_quantity}{ing.unit} por {formatCurrency(Number(ing.purchase_price))}
                                     </p>
                                   </div>
-                                  <Button 
-                                    variant="ghost" size="icon" 
-                                    className="text-destructive h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-                                    onClick={() => deleteIngredient.mutate(ing.id)}
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
+                                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <Button 
+                                      variant="ghost" size="icon" 
+                                      className="text-primary h-8 w-8"
+                                      onClick={() => handleEditIngredient(ing)}
+                                    >
+                                      <Pencil className="h-4 w-4" />
+                                    </Button>
+                                    <Button 
+                                      variant="ghost" size="icon" 
+                                      className="text-destructive h-8 w-8"
+                                      onClick={() => deleteIngredient.mutate(ing.id)}
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  </div>
                                 </div>
                                 <div className="mt-4 pt-4 border-t flex justify-between items-end">
                                   <div>
