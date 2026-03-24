@@ -44,7 +44,6 @@ export default defineConfig(({ mode }) => ({
       },
       workbox: {
       globPatterns: ["**/*.{js,css,html,ico,png,svg}"],
-      suppressWarnings: true,
         navigateFallbackDenylist: [/^\/~oauth/],
       },
       devOptions: {
