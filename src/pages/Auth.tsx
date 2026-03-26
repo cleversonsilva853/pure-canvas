@@ -148,6 +148,8 @@ const Auth = React.forwardRef<HTMLDivElement>((_, ref) => {
       </motion.div>
     </div>
   );
-};
+});
+
+Auth.displayName = 'Auth';
 
 export default Auth;
