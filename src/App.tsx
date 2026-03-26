@@ -39,12 +39,13 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
-const AuthRoute = () => {
+const AuthRoute = React.forwardRef<HTMLDivElement>((_, ref) => {
   const { user, loading } = useAuth();
   if (loading) return null;
   if (user) return <Navigate to="/" replace />;
   return <Auth />;
-};
+});
+AuthRoute.displayName = 'AuthRoute';
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
