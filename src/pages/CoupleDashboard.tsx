@@ -377,7 +377,7 @@ const CoupleDashboard = () => {
                     <Progress 
                       value={budget.progress} 
                       className="h-1.5 mb-2" 
-                      indicatorClassName={budget.progress > 90 ? "bg-destructive" : ""} 
+                       
                     />
                     <div className="flex justify-between text-[10px] text-muted-foreground font-medium">
                       <span>Gasto: {formatCurrency(budget.spent)}</span>
