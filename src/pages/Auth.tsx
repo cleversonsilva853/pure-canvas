@@ -8,7 +8,9 @@ import { toast } from 'sonner';
 import { Eye, EyeOff, Wallet, Mail } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-const Auth = () => {
+import React from 'react';
+
+const Auth = React.forwardRef<HTMLDivElement>((_, ref) => {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -146,6 +148,8 @@ const Auth = () => {
       </motion.div>
     </div>
   );
-};
+});
+
+Auth.displayName = 'Auth';
 
 export default Auth;
