@@ -315,7 +315,7 @@ const CoupleDashboard = () => {
                   <div key={goal.id} className="p-4 rounded-xl bg-secondary/30 border border-border/50">
                     <div className="flex justify-between items-start mb-2">
                       <div>
-                        <h4 className="font-semibold text-sm">{goal.title}</h4>
+                        <h4 className="font-semibold text-sm">{goal.name}</h4>
                         <span className={cn(
                           "px-1.5 py-0.5 rounded-full text-[9px] font-bold uppercase",
                           goal.isOwner ? "bg-primary/10 text-primary" : "bg-blue-500/10 text-blue-600"
