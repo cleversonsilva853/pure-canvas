@@ -1,7 +1,6 @@
 import { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useBusinessExpenses, useBusinessSales } from '@/hooks/useBusinessData';
-import { useAccounts } from '@/hooks/useFinanceData';
+import { useBusinessExpenses, useBusinessSales, useBusinessAccounts } from '@/hooks/useBusinessData';
 import { DollarSign, TrendingDown, TrendingUp, Percent, Wallet } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
@@ -11,7 +10,7 @@ const fmt = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', c
 const BusinessDashboard = () => {
   const { data: expenses = [] } = useBusinessExpenses();
   const { data: sales = [] } = useBusinessSales();
-  const { data: accounts = [] } = useAccounts();
+  const { data: accounts = [] } = useBusinessAccounts();
 
   const today = new Date().toISOString().slice(0, 10);
   const currentMonth = new Date().getMonth();

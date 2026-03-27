@@ -4,6 +4,26 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { useBusinessOwnerId } from '@/hooks/useBusinessOwnerId';
 
+// ---- Business Accounts ----
+export const useBusinessAccounts = () => {
+  const { user } = useAuth();
+  const ownerId = useBusinessOwnerId();
+
+  return useQuery({
+    queryKey: ['business_accounts', ownerId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('business_accounts')
+        .select('*')
+        .eq('user_id', ownerId!)
+        .order('created_at', { ascending: true });
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user && !!ownerId,
+  });
+};
+
 // ---- Business Expenses ----
 export const useBusinessExpenses = () => {
   const { user } = useAuth();

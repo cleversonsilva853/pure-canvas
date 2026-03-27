@@ -5,8 +5,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { useAccounts } from '@/hooks/useFinanceData';
 import { useAuth } from '@/contexts/AuthContext';
+import { useBusinessAccounts } from '@/hooks/useBusinessData';
+import { useBusinessOwnerId } from '@/hooks/useBusinessOwnerId';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -45,8 +46,9 @@ const accountTypeColors: Record<string, string> = {
 
 const BusinessAccounts = () => {
   const { user } = useAuth();
+  const ownerId = useBusinessOwnerId();
   const queryClient = useQueryClient();
-  const { data: accounts = [], isLoading } = useAccounts();
+  const { data: accounts = [], isLoading } = useBusinessAccounts();
 
   // New account dialog
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -98,15 +100,15 @@ const BusinessAccounts = () => {
     if (!user) return;
     setLoading(true);
     try {
-      const { error } = await supabase.from('accounts').insert({
-        user_id: user.id,
+      const { error } = await supabase.from('business_accounts').insert({
+        user_id: ownerId!,
         name,
         type,
         balance: parseFloat(balance) || 0,
       });
       if (error) throw error;
       toast.success('Conta criada!');
-      await queryClient.invalidateQueries({ queryKey: ['accounts', user?.id] });
+      await queryClient.invalidateQueries({ queryKey: ['business_accounts', ownerId] });
       setDialogOpen(false);
       setName('');
       setType('checking');
@@ -139,40 +141,19 @@ const BusinessAccounts = () => {
     try {
       // Update balances
       const { error: err1 } = await supabase
-        .from('accounts')
+        .from('business_accounts')
         .update({ balance: Number(fromAccount.balance) - amount })
         .eq('id', fromAccountId);
       if (err1) throw err1;
 
       const { error: err2 } = await supabase
-        .from('accounts')
+        .from('business_accounts')
         .update({ balance: Number(toAccount.balance) + amount })
         .eq('id', toAccountId);
       if (err2) throw err2;
 
-      // Create transfer transactions
-      await supabase.from('transactions').insert([
-        {
-          user_id: user.id,
-          account_id: fromAccountId,
-          type: 'transfer' as any,
-          amount,
-          description: `Transferência para ${toAccount.name}`,
-          date: new Date().toISOString().split('T')[0],
-        },
-        {
-          user_id: user.id,
-          account_id: toAccountId,
-          type: 'transfer' as any,
-          amount,
-          description: `Transferência de ${fromAccount.name}`,
-          date: new Date().toISOString().split('T')[0],
-        },
-      ]);
-
       toast.success(`${formatCurrency(amount)} transferido de ${fromAccount.name} para ${toAccount.name}`);
-      await queryClient.invalidateQueries({ queryKey: ['accounts', user?.id] });
-      await queryClient.invalidateQueries({ queryKey: ['transactions', user?.id] });
+      await queryClient.invalidateQueries({ queryKey: ['business_accounts', ownerId] });
       setTransferOpen(false);
       setFromAccountId('');
       setToAccountId('');
@@ -192,23 +173,23 @@ const BusinessAccounts = () => {
 
   const handleSaveEdit = async (id: string) => {
     const { error } = await supabase
-      .from('accounts')
+      .from('business_accounts')
       .update({ name: editName, balance: parseFloat(editBalance) || 0 })
       .eq('id', id);
     if (error) toast.error('Erro ao salvar');
     else {
       toast.success('Conta atualizada');
-      await queryClient.invalidateQueries({ queryKey: ['accounts', user?.id] });
+      await queryClient.invalidateQueries({ queryKey: ['business_accounts', ownerId] });
       setEditingId(null);
     }
   };
 
   const handleDelete = async (id: string) => {
-    const { error } = await supabase.from('accounts').delete().eq('id', id);
+    const { error } = await supabase.from('business_accounts').delete().eq('id', id);
     if (error) toast.error('Erro ao excluir');
     else {
       toast.success('Conta excluída');
-      await queryClient.invalidateQueries({ queryKey: ['accounts', user?.id] });
+      await queryClient.invalidateQueries({ queryKey: ['business_accounts', ownerId] });
     }
   };
 
