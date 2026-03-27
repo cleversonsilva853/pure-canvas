@@ -2,11 +2,12 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { useBusinessOwnerId } from '@/hooks/useBusinessOwnerId';
 
 // ---- Business Expenses ----
 export const useBusinessExpenses = () => {
   const { user } = useAuth();
-  const ownerId = user?.user_metadata?.created_by || user?.id;
+  const ownerId = useBusinessOwnerId();
   
   return useQuery({
     queryKey: ['business_expenses', ownerId],
@@ -14,24 +15,23 @@ export const useBusinessExpenses = () => {
       const { data, error } = await supabase
         .from('business_expenses')
         .select('*')
-        .eq('user_id', ownerId)
+        .eq('user_id', ownerId!)
         .order('date', { ascending: false });
       if (error) throw error;
       return data;
     },
-    enabled: !!user,
+    enabled: !!user && !!ownerId,
   });
 };
 
 export const useCreateBusinessExpense = () => {
-  const { user } = useAuth();
   const qc = useQueryClient();
   const { toast } = useToast();
-  const ownerId = user?.user_metadata?.created_by || user?.id;
+  const ownerId = useBusinessOwnerId();
 
   return useMutation({
     mutationFn: async (values: { name: string; category: string; amount: number; date: string; observation?: string }) => {
-      const { error } = await supabase.from('business_expenses').insert({ ...values, user_id: ownerId });
+      const { error } = await supabase.from('business_expenses').insert({ ...values, user_id: ownerId! });
       if (error) throw error;
     },
     onSuccess: () => {
@@ -60,7 +60,7 @@ export const useDeleteBusinessExpense = () => {
 // ---- Business Products ----
 export const useBusinessProducts = () => {
   const { user } = useAuth();
-  const ownerId = user?.user_metadata?.created_by || user?.id;
+  const ownerId = useBusinessOwnerId();
 
   return useQuery({
     queryKey: ['business_products', ownerId],
@@ -68,24 +68,23 @@ export const useBusinessProducts = () => {
       const { data, error } = await supabase
         .from('business_products')
         .select('*')
-        .eq('user_id', ownerId)
+        .eq('user_id', ownerId!)
         .order('name', { ascending: true });
       if (error) throw error;
       return data;
     },
-    enabled: !!user,
+    enabled: !!user && !!ownerId,
   });
 };
 
 export const useCreateBusinessProduct = () => {
-  const { user } = useAuth();
   const qc = useQueryClient();
   const { toast } = useToast();
-  const ownerId = user?.user_metadata?.created_by || user?.id;
+  const ownerId = useBusinessOwnerId();
 
   return useMutation({
     mutationFn: async (values: { name: string; sale_price: number; cost_price: number; stock?: number }) => {
-      const { error } = await supabase.from('business_products').insert({ ...values, user_id: ownerId });
+      const { error } = await supabase.from('business_products').insert({ ...values, user_id: ownerId! });
       if (error) throw error;
     },
     onSuccess: () => {
@@ -131,7 +130,7 @@ export const useDeleteBusinessProduct = () => {
 // ---- Business Sales ----
 export const useBusinessSales = () => {
   const { user } = useAuth();
-  const ownerId = user?.user_metadata?.created_by || user?.id;
+  const ownerId = useBusinessOwnerId();
 
   return useQuery({
     queryKey: ['business_sales', ownerId],
@@ -139,24 +138,23 @@ export const useBusinessSales = () => {
       const { data, error } = await supabase
         .from('business_sales')
         .select('*')
-        .eq('user_id', ownerId)
+        .eq('user_id', ownerId!)
         .order('date', { ascending: false });
       if (error) throw error;
       return data;
     },
-    enabled: !!user,
+    enabled: !!user && !!ownerId,
   });
 };
 
 export const useCreateBusinessSale = () => {
-  const { user } = useAuth();
   const qc = useQueryClient();
   const { toast } = useToast();
-  const ownerId = user?.user_metadata?.created_by || user?.id;
+  const ownerId = useBusinessOwnerId();
 
   return useMutation({
     mutationFn: async (values: { product_id?: string; product_name: string; quantity: number; unit_price: number; total_price: number; date: string }) => {
-      const { error } = await supabase.from('business_sales').insert({ ...values, user_id: ownerId });
+      const { error } = await supabase.from('business_sales').insert({ ...values, user_id: ownerId! });
       if (error) throw error;
     },
     onSuccess: () => {
@@ -185,7 +183,7 @@ export const useDeleteBusinessSale = () => {
 // ---- Business Ingredients (Insumos) ----
 export const useBusinessIngredients = () => {
   const { user } = useAuth();
-  const ownerId = user?.user_metadata?.created_by || user?.id;
+  const ownerId = useBusinessOwnerId();
 
   return useQuery({
     queryKey: ['business_ingredients', ownerId],
@@ -193,24 +191,23 @@ export const useBusinessIngredients = () => {
       const { data, error } = await supabase
         .from('business_ingredients')
         .select('*')
-        .eq('user_id', ownerId)
+        .eq('user_id', ownerId!)
         .order('name', { ascending: true });
       if (error) throw error;
       return data;
     },
-    enabled: !!user,
+    enabled: !!user && !!ownerId,
   });
 };
 
 export const useCreateBusinessIngredient = () => {
-  const { user } = useAuth();
   const qc = useQueryClient();
   const { toast } = useToast();
-  const ownerId = user?.user_metadata?.created_by || user?.id;
+  const ownerId = useBusinessOwnerId();
 
   return useMutation({
     mutationFn: async (values: { name: string; unit: string; purchase_price: number; purchase_quantity: number }) => {
-      const { error } = await supabase.from('business_ingredients').insert({ ...values, user_id: ownerId });
+      const { error } = await supabase.from('business_ingredients').insert({ ...values, user_id: ownerId! });
       if (error) throw error;
     },
     onSuccess: () => {
@@ -277,11 +274,9 @@ export const useUpdateProductComposition = () => {
 
   return useMutation({
     mutationFn: async ({ productId, compositions }: { productId: string; compositions: { ingredient_id: string; quantity: number }[] }) => {
-      // Deletar composições antigas
       const { error: deleteError } = await supabase.from('business_product_compositions').delete().eq('product_id', productId);
       if (deleteError) throw deleteError;
 
-      // Inserir novas
       if (compositions.length > 0) {
         const { error: insertError } = await supabase.from('business_product_compositions').insert(
           compositions.map(c => ({ ...c, product_id: productId }))
