@@ -1,6 +1,6 @@
 {
-  "name": "FinControl - Controle Financeiro",
-  "short_name": "FinControl",
+  "name": "InforControl - Controle Financeiro",
+  "short_name": "InforControl",
   "description": "Sistema completo de controle financeiro pessoal",
   "start_url": "/",
   "display": "standalone",

@@ -94,7 +94,7 @@ const AppSidebar = () => {
           <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-primary/10 shrink-0">
             <Wallet className="w-5 h-5 text-primary" />
           </div>
-          {!collapsed && <span className="font-bold text-lg tracking-tight">FinControl</span>}
+          {!collapsed && <span className="font-bold text-lg tracking-tight">InforControl</span>}
         </div>
 
         {/* Mode Selector */}

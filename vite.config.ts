@@ -19,8 +19,8 @@ export default defineConfig(({ mode }) => ({
       registerType: "autoUpdate",
       includeAssets: ["favicon.ico", "icons/icon-192.png", "icons/icon-512.png"],
       manifest: {
-        name: "FinControl - Controle Financeiro",
-        short_name: "FinControl",
+        name: "InforControl - Controle Financeiro",
+        short_name: "InforControl",
         description: "Sistema completo de controle financeiro pessoal",
         theme_color: "#3B82F6",
         background_color: "#f8fafc",

@@ -16,7 +16,7 @@ const PWAInstallPrompt = () => {
           <Download className="h-5 w-5 text-primary" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-foreground">Instalar FinControl</p>
+          <p className="text-sm font-semibold text-foreground">Instalar InforControl</p>
           <p className="text-xs text-muted-foreground">Acesse rápido pela tela inicial</p>
         </div>
         <Button size="sm" onClick={installPWA} className="flex-shrink-0">
