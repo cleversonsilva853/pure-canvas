@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useBusinessExpenses, useCreateBusinessExpense, useDeleteBusinessExpense } from '@/hooks/useBusinessData';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, Search, Filter } from 'lucide-react';
 
 const fmt = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
 
@@ -20,13 +20,25 @@ const BusinessExpenses = () => {
   const deleteExpense = useDeleteBusinessExpense();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ name: '', category: 'Outros', amount: '', date: new Date().toISOString().slice(0, 10), observation: '' });
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterMonth, setFilterMonth] = useState<string>(String(new Date().getMonth()));
+  const [filterYear, setFilterYear] = useState<string>(String(new Date().getFullYear()));
 
   const today = new Date().toISOString().slice(0, 10);
-  const currentMonth = new Date().getMonth();
-  const currentYear = new Date().getFullYear();
+
+  const filteredExpenses = useMemo(() => {
+    return expenses.filter(e => {
+      const elYear = e.date.substring(0, 4);
+      const elMonth = String(parseInt(e.date.substring(5, 7), 10) - 1);
+      const matchMonth = filterMonth === 'all' || elMonth === filterMonth;
+      const matchYear = filterYear === 'all' || elYear === filterYear;
+      const matchSearch = !searchTerm || e.name.toLowerCase().includes(searchTerm.toLowerCase());
+      return matchMonth && matchYear && matchSearch;
+    });
+  }, [expenses, filterMonth, filterYear, searchTerm]);
 
   const dailyTotal = useMemo(() => expenses.filter(e => e.date === today).reduce((s, e) => s + Number(e.amount), 0), [expenses, today]);
-  const monthlyTotal = useMemo(() => expenses.filter(e => { const d = new Date(e.date); return d.getMonth() === currentMonth && d.getFullYear() === currentYear; }).reduce((s, e) => s + Number(e.amount), 0), [expenses, currentMonth, currentYear]);
+  const filteredTotal = useMemo(() => filteredExpenses.reduce((s, e) => s + Number(e.amount), 0), [filteredExpenses]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,18 +73,51 @@ const BusinessExpenses = () => {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <Card><CardContent className="p-4 text-center"><p className="text-sm text-muted-foreground">Total Hoje</p><p className="text-xl font-bold">{fmt(dailyTotal)}</p></CardContent></Card>
-        <Card><CardContent className="p-4 text-center"><p className="text-sm text-muted-foreground">Total Mensal</p><p className="text-xl font-bold">{fmt(monthlyTotal)}</p></CardContent></Card>
+        <Card><CardContent className="p-4 text-center"><p className="text-sm text-muted-foreground">Total Hoje (Geral)</p><p className="text-xl font-bold">{fmt(dailyTotal)}</p></CardContent></Card>
+        <Card><CardContent className="p-4 text-center"><p className="text-sm text-muted-foreground">Total Filtrado</p><p className="text-xl font-bold">{fmt(filteredTotal)}</p></CardContent></Card>
+      </div>
+
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input placeholder="Buscar despesas..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10" />
+        </div>
+        <Select value={filterMonth} onValueChange={setFilterMonth}>
+          <SelectTrigger className="w-full sm:w-[160px]">
+            <Filter className="h-4 w-4 mr-2" />
+            <SelectValue placeholder="Mês" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos os meses</SelectItem>
+            {Array.from({ length: 12 }).map((_, i) => (
+              <SelectItem key={i} value={String(i)}>
+                {new Date(0, i).toLocaleString('pt-BR', { month: 'long' })}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={filterYear} onValueChange={setFilterYear}>
+          <SelectTrigger className="w-full sm:w-[140px]">
+            <SelectValue placeholder="Ano" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos os anos</SelectItem>
+            {Array.from({ length: 5 }).map((_, i) => {
+              const year = new Date().getFullYear() - i;
+              return <SelectItem key={year} value={String(year)}>{year}</SelectItem>;
+            })}
+          </SelectContent>
+        </Select>
       </div>
 
       <Card>
         <CardHeader><CardTitle className="text-base">Despesas</CardTitle></CardHeader>
         <CardContent>
-          {isLoading ? <p className="text-muted-foreground text-sm">Carregando...</p> : expenses.length === 0 ? <p className="text-muted-foreground text-sm">Nenhuma despesa cadastrada.</p> : (
+          {isLoading ? <p className="text-muted-foreground text-sm">Carregando...</p> : filteredExpenses.length === 0 ? <p className="text-muted-foreground text-sm">Nenhuma despesa encontrada.</p> : (
             <Table>
               <TableHeader><TableRow><TableHead>Nome</TableHead><TableHead>Categoria</TableHead><TableHead>Valor</TableHead><TableHead>Data</TableHead><TableHead></TableHead></TableRow></TableHeader>
               <TableBody>
-                {expenses.map(e => (
+                {filteredExpenses.map(e => (
                   <TableRow key={e.id}>
                     <TableCell className="font-medium">{e.name}</TableCell>
                     <TableCell>{e.category}</TableCell>

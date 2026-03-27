@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useBusinessSales, useCreateBusinessSale, useDeleteBusinessSale, useBusinessProducts } from '@/hooks/useBusinessData';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, Search, Filter } from 'lucide-react';
 
 const fmt = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
 
@@ -18,9 +18,25 @@ const BusinessSales = () => {
   const deleteSale = useDeleteBusinessSale();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ product_id: '', product_name: '', quantity: '1', unit_price: '', date: new Date().toISOString().slice(0, 10) });
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterMonth, setFilterMonth] = useState<string>(String(new Date().getMonth()));
+  const [filterYear, setFilterYear] = useState<string>(String(new Date().getFullYear()));
 
   const totalPrice = Number(form.quantity || 0) * Number(form.unit_price || 0);
+  
+  const filteredSales = useMemo(() => {
+    return sales.filter(e => {
+      const elYear = e.date.substring(0, 4);
+      const elMonth = String(parseInt(e.date.substring(5, 7), 10) - 1);
+      const matchMonth = filterMonth === 'all' || elMonth === filterMonth;
+      const matchYear = filterYear === 'all' || elYear === filterYear;
+      const matchSearch = !searchTerm || e.product_name.toLowerCase().includes(searchTerm.toLowerCase());
+      return matchMonth && matchYear && matchSearch;
+    });
+  }, [sales, filterMonth, filterYear, searchTerm]);
+
   const totalRevenue = useMemo(() => sales.reduce((s, e) => s + Number(e.total_price), 0), [sales]);
+  const filteredRevenue = useMemo(() => filteredSales.reduce((s, e) => s + Number(e.total_price), 0), [filteredSales]);
 
   const handleProductSelect = (productId: string) => {
     if (productId === 'manual') {
@@ -78,16 +94,52 @@ const BusinessSales = () => {
         </Dialog>
       </div>
 
-      <Card><CardContent className="p-4 text-center"><p className="text-sm text-muted-foreground">Faturamento Total</p><p className="text-xl font-bold">{fmt(totalRevenue)}</p></CardContent></Card>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <Card><CardContent className="p-4 text-center"><p className="text-sm text-muted-foreground">Faturamento Total (Geral)</p><p className="text-xl font-bold">{fmt(totalRevenue)}</p></CardContent></Card>
+        <Card><CardContent className="p-4 text-center"><p className="text-sm text-muted-foreground">Faturamento Filtrado</p><p className="text-xl font-bold">{fmt(filteredRevenue)}</p></CardContent></Card>
+      </div>
+
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input placeholder="Buscar vendas..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10" />
+        </div>
+        <Select value={filterMonth} onValueChange={setFilterMonth}>
+          <SelectTrigger className="w-full sm:w-[160px]">
+            <Filter className="h-4 w-4 mr-2" />
+            <SelectValue placeholder="Mês" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos os meses</SelectItem>
+            {Array.from({ length: 12 }).map((_, i) => (
+              <SelectItem key={i} value={String(i)}>
+                {new Date(0, i).toLocaleString('pt-BR', { month: 'long' })}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={filterYear} onValueChange={setFilterYear}>
+          <SelectTrigger className="w-full sm:w-[140px]">
+            <SelectValue placeholder="Ano" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos os anos</SelectItem>
+            {Array.from({ length: 5 }).map((_, i) => {
+              const year = new Date().getFullYear() - i;
+              return <SelectItem key={year} value={String(year)}>{year}</SelectItem>;
+            })}
+          </SelectContent>
+        </Select>
+      </div>
 
       <Card>
         <CardHeader><CardTitle className="text-base">Vendas Realizadas</CardTitle></CardHeader>
         <CardContent>
-          {isLoading ? <p className="text-muted-foreground text-sm">Carregando...</p> : sales.length === 0 ? <p className="text-muted-foreground text-sm">Nenhuma venda registrada.</p> : (
+          {isLoading ? <p className="text-muted-foreground text-sm">Carregando...</p> : filteredSales.length === 0 ? <p className="text-muted-foreground text-sm">Nenhuma venda encontrada.</p> : (
             <Table>
               <TableHeader><TableRow><TableHead>Produto</TableHead><TableHead>Qtd</TableHead><TableHead>Unit.</TableHead><TableHead>Total</TableHead><TableHead>Data</TableHead><TableHead></TableHead></TableRow></TableHeader>
               <TableBody>
-                {sales.map(s => (
+                {filteredSales.map(s => (
                   <TableRow key={s.id}>
                     <TableCell className="font-medium">{s.product_name}</TableCell>
                     <TableCell>{s.quantity}</TableCell>
