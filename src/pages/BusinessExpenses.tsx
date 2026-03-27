@@ -18,6 +18,13 @@ const fmt = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', c
 
 const CATEGORIES = ['Ingredientes', 'Aluguel', 'Funcionários', 'Energia', 'Água', 'Embalagens', 'Marketing', 'Manutenção', 'Outros'];
 
+const formatDate = (dateStr: string) => {
+  if (!dateStr) return '';
+  const [year, month, day] = dateStr.split('-').map(Number);
+  return new Date(year, month - 1, day).toLocaleDateString('pt-BR');
+};
+
+
 const BusinessExpenses = () => {
   const { data: expenses = [], isLoading } = useBusinessExpenses();
   const createExpense = useCreateBusinessExpense();
@@ -59,7 +66,7 @@ const BusinessExpenses = () => {
       e.name,
       e.category,
       fmt(Number(e.amount)),
-      new Date(e.date).toLocaleDateString('pt-BR'),
+      formatDate(e.date),
       e.observation || ''
     ]);
 
@@ -77,7 +84,7 @@ const BusinessExpenses = () => {
       'Nome': e.name,
       'Categoria': e.category,
       'Valor': Number(e.amount),
-      'Data': new Date(e.date).toLocaleDateString('pt-BR'),
+      'Data': formatDate(e.date),
       'Observação': e.observation || ''
     }));
 
@@ -181,7 +188,7 @@ const BusinessExpenses = () => {
                     <TableCell className="font-medium">{e.name}</TableCell>
                     <TableCell>{e.category}</TableCell>
                     <TableCell>{fmt(Number(e.amount))}</TableCell>
-                    <TableCell>{new Date(e.date).toLocaleDateString('pt-BR')}</TableCell>
+                    <TableCell>{formatDate(e.date)}</TableCell>
                     <TableCell><Button variant="ghost" size="icon" onClick={() => deleteExpense.mutate(e.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button></TableCell>
                   </TableRow>
                 ))}

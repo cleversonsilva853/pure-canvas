@@ -15,6 +15,13 @@ import * as XLSX from 'xlsx';
 
 const fmt = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
 
+const formatDate = (dateStr: string) => {
+  if (!dateStr) return '';
+  const [year, month, day] = dateStr.split('-').map(Number);
+  return new Date(year, month - 1, day).toLocaleDateString('pt-BR');
+};
+
+
 const BusinessSales = () => {
   const { data: sales = [], isLoading } = useBusinessSales();
   const { data: products = [] } = useBusinessProducts();
@@ -76,7 +83,7 @@ const BusinessSales = () => {
       s.quantity.toString(),
       fmt(Number(s.unit_price)),
       fmt(Number(s.total_price)),
-      new Date(s.date).toLocaleDateString('pt-BR')
+      formatDate(s.date)
     ]);
 
     autoTable(doc, {
@@ -94,7 +101,7 @@ const BusinessSales = () => {
       'Quantidade': s.quantity,
       'Valor Unitário': Number(s.unit_price),
       'Valor Total': Number(s.total_price),
-      'Data': new Date(s.date).toLocaleDateString('pt-BR')
+      'Data': formatDate(s.date)
     }));
 
     const ws = XLSX.utils.json_to_sheet(dataToExport);
@@ -204,7 +211,7 @@ const BusinessSales = () => {
                     <TableCell>{s.quantity}</TableCell>
                     <TableCell>{fmt(Number(s.unit_price))}</TableCell>
                     <TableCell className="font-semibold">{fmt(Number(s.total_price))}</TableCell>
-                    <TableCell>{new Date(s.date).toLocaleDateString('pt-BR')}</TableCell>
+                    <TableCell>{formatDate(s.date)}</TableCell>
                     <TableCell><Button variant="ghost" size="icon" onClick={() => deleteSale.mutate(s.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button></TableCell>
                   </TableRow>
                 ))}
