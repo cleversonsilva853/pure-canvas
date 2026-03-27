@@ -166,6 +166,96 @@ export type Database = {
         }
         Relationships: []
       }
+      business_ingredients: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string
+          purchase_price: number
+          purchase_quantity: number
+          unit: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name: string
+          purchase_price: number
+          purchase_quantity: number
+          unit?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string
+          purchase_price?: number
+          purchase_quantity?: number
+          unit?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      business_members: {
+        Row: {
+          created_at: string
+          id: string
+          member_id: string
+          owner_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          member_id: string
+          owner_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          member_id?: string
+          owner_id?: string
+        }
+        Relationships: []
+      }
+      business_product_compositions: {
+        Row: {
+          created_at: string | null
+          id: string
+          ingredient_id: string | null
+          product_id: string | null
+          quantity: number
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          ingredient_id?: string | null
+          product_id?: string | null
+          quantity: number
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          ingredient_id?: string | null
+          product_id?: string | null
+          quantity?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_product_compositions_ingredient_id_fkey"
+            columns: ["ingredient_id"]
+            isOneToOne: false
+            referencedRelation: "business_ingredients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "business_product_compositions_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "business_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       business_products: {
         Row: {
           cost_price: number
@@ -544,7 +634,11 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_business_owner_id: { Args: { _user_id: string }; Returns: string }
+      is_business_member: {
+        Args: { _member_id: string; _owner_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never

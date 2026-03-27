@@ -1,3 +1,4 @@
+import React from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -39,12 +40,13 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
-const AuthRoute = () => {
+const AuthRoute = React.forwardRef<HTMLDivElement>((_, ref) => {
   const { user, loading } = useAuth();
   if (loading) return null;
   if (user) return <Navigate to="/" replace />;
   return <Auth />;
-};
+});
+AuthRoute.displayName = 'AuthRoute';
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
