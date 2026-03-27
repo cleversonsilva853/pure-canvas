@@ -196,6 +196,27 @@ export type Database = {
         }
         Relationships: []
       }
+      business_members: {
+        Row: {
+          created_at: string
+          id: string
+          member_id: string
+          owner_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          member_id: string
+          owner_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          member_id?: string
+          owner_id?: string
+        }
+        Relationships: []
+      }
       business_product_compositions: {
         Row: {
           created_at: string | null
@@ -613,7 +634,11 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_business_owner_id: { Args: { _user_id: string }; Returns: string }
+      is_business_member: {
+        Args: { _member_id: string; _owner_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never

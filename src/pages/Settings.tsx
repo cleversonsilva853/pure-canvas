@@ -89,7 +89,7 @@ const Settings = () => {
     e.preventDefault();
     setCreatingCouple(true);
     try {
-      const { error } = await supabase.auth.signUp({
+      const { data: signUpData, error } = await supabase.auth.signUp({
         email: coupleEmail,
         password: couplePassword,
         options: {
@@ -101,6 +101,15 @@ const Settings = () => {
         }
       });
       if (error) throw error;
+
+      // Register business membership in server-controlled table
+      if (signUpData?.user?.id) {
+        await supabase.from('business_members').insert({
+          owner_id: user!.id,
+          member_id: signUpData.user.id,
+        });
+      }
+
       toast.success('Conta casal criada! Verifique o email antes de acessar.');
       setCoupleEmail('');
       setCouplePassword('');
