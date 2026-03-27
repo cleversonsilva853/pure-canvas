@@ -106,7 +106,7 @@ const BusinessAccounts = () => {
       });
       if (error) throw error;
       toast.success('Conta criada!');
-      queryClient.invalidateQueries({ queryKey: ['accounts'] });
+      await queryClient.invalidateQueries({ queryKey: ['accounts', user?.id] });
       setDialogOpen(false);
       setName('');
       setType('checking');
@@ -171,8 +171,8 @@ const BusinessAccounts = () => {
       ]);
 
       toast.success(`${formatCurrency(amount)} transferido de ${fromAccount.name} para ${toAccount.name}`);
-      queryClient.invalidateQueries({ queryKey: ['accounts'] });
-      queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      await queryClient.invalidateQueries({ queryKey: ['accounts', user?.id] });
+      await queryClient.invalidateQueries({ queryKey: ['transactions', user?.id] });
       setTransferOpen(false);
       setFromAccountId('');
       setToAccountId('');
@@ -198,7 +198,7 @@ const BusinessAccounts = () => {
     if (error) toast.error('Erro ao salvar');
     else {
       toast.success('Conta atualizada');
-      queryClient.invalidateQueries({ queryKey: ['accounts'] });
+      await queryClient.invalidateQueries({ queryKey: ['accounts', user?.id] });
       setEditingId(null);
     }
   };
@@ -208,7 +208,7 @@ const BusinessAccounts = () => {
     if (error) toast.error('Erro ao excluir');
     else {
       toast.success('Conta excluída');
-      queryClient.invalidateQueries({ queryKey: ['accounts'] });
+      await queryClient.invalidateQueries({ queryKey: ['accounts', user?.id] });
     }
   };
 
