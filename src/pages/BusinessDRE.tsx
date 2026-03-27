@@ -5,6 +5,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import * as XLSX from 'xlsx';
 import { useBusinessSales, useBusinessExpenses, useBusinessProducts } from '@/hooks/useBusinessData';
 import { 
   TrendingUp, 
@@ -15,7 +19,10 @@ import {
   Percent,
   AlertCircle,
   ArrowUpRight,
-  ArrowDownRight
+  ArrowDownRight,
+  Download,
+  FileText,
+  FileSpreadsheet
 } from 'lucide-react';
 import { 
   BarChart, 
@@ -98,6 +105,71 @@ const BusinessDRE = () => {
 
   const profitDiff = previous.revenue > 0 ? ((current.revenue - previous.revenue) / previous.revenue) * 100 : 0;
 
+  const handleExportPDF = () => {
+    const doc = new jsPDF();
+    const periodStr = `${String(month).padStart(2, '0')}/${year}`;
+    
+    doc.setFontSize(16);
+    doc.text(`DRE Empresarial - ${periodStr}`, 14, 20);
+    
+    doc.setFontSize(11);
+    doc.text(`Demonstrativo do Resultado do Exercício`, 14, 28);
+
+    const tableData = [
+      ['1. Receita Bruta (Vendas)', fmt(current.revenue)],
+      ['(-) Custo das Mercadorias Vendidas (CMV)', `(${fmt(current.cmv)})`],
+      ['3. (=) Lucro Bruto', fmt(current.grossProfit)],
+      ['(-) Despesas Operacionais', `(${fmt(current.operatingExpenses)})`],
+      ['5. (=) Lucro Operacional (EBITDA)', fmt(current.operatingProfit)],
+      [`(-) Impostos e Taxas (${taxRate}%)`, `(${fmt(current.taxes)})`],
+      ['7. (=) Resultado Líquido do Período', fmt(current.netProfit)],
+    ];
+
+    autoTable(doc, {
+      startY: 35,
+      head: [['Descrição', 'Valor (R$)']],
+      body: tableData,
+      theme: 'striped',
+      headStyles: { fillColor: [41, 128, 185] },
+      styles: { fontSize: 10 },
+      columnStyles: {
+        0: { cellWidth: 120 },
+        1: { halign: 'right' }
+      }
+    });
+
+    doc.save(`DRE_${periodStr.replace('/', '_')}.pdf`);
+  };
+
+  const handleExportExcel = () => {
+    const periodStr = `${String(month).padStart(2, '0')}/${year}`;
+    const tableData = [
+      ['Descrição', 'Valor (R$)'],
+      ['1. Receita Bruta (Vendas)', current.revenue],
+      ['(-) Custo das Mercadorias Vendidas (CMV)', -current.cmv],
+      ['3. (=) Lucro Bruto', current.grossProfit],
+      ['(-) Despesas Operacionais', -current.operatingExpenses],
+      ['5. (=) Lucro Operacional (EBITDA)', current.operatingProfit],
+      [`(-) Impostos e Taxas (${taxRate}%)`, -current.taxes],
+      ['7. (=) Resultado Líquido do Período', current.netProfit],
+    ];
+
+    const ws = XLSX.utils.aoa_to_sheet(tableData);
+    
+    const range = XLSX.utils.decode_range(ws['!ref'] || 'A1:B8');
+    for (let R = 1; R <= range.e.r; ++R) {
+      const cell = ws[XLSX.utils.encode_cell({ r: R, c: 1 })];
+      if (cell && cell.t === 'n') {
+        cell.z = '"R$" #,##0.00;"R$" -#,##0.00';
+      }
+    }
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'DRE');
+    
+    XLSX.writeFile(wb, `DRE_${periodStr.replace('/', '_')}.xlsx`);
+  };
+
   return (
     <div className="space-y-6 pb-12">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -107,6 +179,25 @@ const BusinessDRE = () => {
         </div>
 
         <div className="flex items-center gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="gap-2">
+                <Download className="h-4 w-4" />
+                <span className="hidden sm:inline">Exportar</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={handleExportPDF} className="gap-2 cursor-pointer">
+                <FileText className="h-4 w-4 text-red-500" />
+                Exportar PDF
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleExportExcel} className="gap-2 cursor-pointer">
+                <FileSpreadsheet className="h-4 w-4 text-emerald-500" />
+                Exportar Excel
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
           <Select value={String(month)} onValueChange={v => setMonth(Number(v))}>
             <SelectTrigger className="w-[140px]"><SelectValue placeholder="Mês" /></SelectTrigger>
             <SelectContent>
