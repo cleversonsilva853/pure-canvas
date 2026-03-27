@@ -51,6 +51,7 @@ const businessNavItems = [
   { to: '/business/products', icon: Package, label: 'Produtos' },
   { to: '/business/pricing', icon: TrendingUp, label: 'Precificação' },
   { to: '/business/dre', icon: LineChart, label: 'DRE' },
+  { to: '/business/accounts', icon: Landmark, label: 'Contas' },
 ];
 
 

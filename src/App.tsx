@@ -28,6 +28,7 @@ import BusinessSales from "@/pages/BusinessSales";
 import BusinessProducts from "@/pages/BusinessProducts";
 import BusinessPricing from "@/pages/BusinessPricing";
 import BusinessDRE from "@/pages/BusinessDRE";
+import BusinessAccounts from "@/pages/BusinessAccounts";
 
 const queryClient = new QueryClient();
 
@@ -78,6 +79,7 @@ const App = () => (
                   <Route path="business/products" element={<BusinessProducts />} />
                   <Route path="business/pricing" element={<BusinessPricing />} />
                   <Route path="business/dre" element={<BusinessDRE />} />
+                  <Route path="business/accounts" element={<BusinessAccounts />} />
                 </Route>
                 <Route path="*" element={<NotFound />} />
               </Routes>
