@@ -6,8 +6,12 @@ import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useBusinessSales, useCreateBusinessSale, useDeleteBusinessSale, useBusinessProducts } from '@/hooks/useBusinessData';
-import { Plus, Trash2, Search, Filter } from 'lucide-react';
+import { Plus, Trash2, Search, Filter, Download, FileText, FileSpreadsheet } from 'lucide-react';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
+import * as XLSX from 'xlsx';
 
 const fmt = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
 
@@ -63,14 +67,68 @@ const BusinessSales = () => {
     setOpen(false);
   };
 
+  const handleExportPDF = () => {
+    const doc = new jsPDF();
+    doc.text('Relatório de Vendas', 14, 15);
+    
+    const tableData = filteredSales.map(s => [
+      s.product_name,
+      s.quantity.toString(),
+      fmt(Number(s.unit_price)),
+      fmt(Number(s.total_price)),
+      new Date(s.date).toLocaleDateString('pt-BR')
+    ]);
+
+    (doc as any).autoTable({
+      head: [['Produto', 'Quantidade', 'Valor Unit.', 'Valor Total', 'Data']],
+      body: tableData,
+      startY: 20,
+    });
+
+    doc.save('vendas.pdf');
+  };
+
+  const handleExportExcel = () => {
+    const dataToExport = filteredSales.map(s => ({
+      'Produto': s.product_name,
+      'Quantidade': s.quantity,
+      'Valor Unitário': Number(s.unit_price),
+      'Valor Total': Number(s.total_price),
+      'Data': new Date(s.date).toLocaleDateString('pt-BR')
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(dataToExport);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Vendas");
+    XLSX.writeFile(wb, "vendas.xlsx");
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Vendas</h1>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-2" />Nova Venda</Button></DialogTrigger>
-          <DialogContent>
-            <DialogHeader><DialogTitle>Registrar Venda</DialogTitle></DialogHeader>
+        <div className="flex items-center gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="gap-2">
+                <Download className="h-4 w-4" />
+                <span className="hidden sm:inline">Exportar</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={handleExportPDF} className="gap-2">
+                <FileText className="h-4 w-4" /> Exportar PDF
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleExportExcel} className="gap-2">
+                <FileSpreadsheet className="h-4 w-4" /> Exportar Excel
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-2" />Nova Venda</Button></DialogTrigger>
+            <DialogContent>
+              <DialogHeader><DialogTitle>Registrar Venda</DialogTitle></DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div><Label>Produto</Label>
                 <Select value={form.product_id || 'manual'} onValueChange={handleProductSelect}>
@@ -92,6 +150,7 @@ const BusinessSales = () => {
             </form>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

@@ -7,8 +7,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useBusinessExpenses, useCreateBusinessExpense, useDeleteBusinessExpense } from '@/hooks/useBusinessData';
-import { Plus, Trash2, Search, Filter } from 'lucide-react';
+import { Plus, Trash2, Search, Filter, Download, FileText, FileSpreadsheet } from 'lucide-react';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
+import * as XLSX from 'xlsx';
 
 const fmt = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
 
@@ -47,13 +51,67 @@ const BusinessExpenses = () => {
     setOpen(false);
   };
 
+  const handleExportPDF = () => {
+    const doc = new jsPDF();
+    doc.text('Relatório de Despesas', 14, 15);
+    
+    const tableData = filteredExpenses.map(e => [
+      e.name,
+      e.category,
+      fmt(Number(e.amount)),
+      new Date(e.date).toLocaleDateString('pt-BR'),
+      e.observation || ''
+    ]);
+
+    (doc as any).autoTable({
+      head: [['Nome', 'Categoria', 'Valor', 'Data', 'Observação']],
+      body: tableData,
+      startY: 20,
+    });
+
+    doc.save('despesas.pdf');
+  };
+
+  const handleExportExcel = () => {
+    const dataToExport = filteredExpenses.map(e => ({
+      'Nome': e.name,
+      'Categoria': e.category,
+      'Valor': Number(e.amount),
+      'Data': new Date(e.date).toLocaleDateString('pt-BR'),
+      'Observação': e.observation || ''
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(dataToExport);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Despesas");
+    XLSX.writeFile(wb, "despesas.xlsx");
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Despesas Empresa</h1>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-2" />Nova Despesa</Button></DialogTrigger>
-          <DialogContent>
+        <div className="flex items-center gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="gap-2">
+                <Download className="h-4 w-4" />
+                <span className="hidden sm:inline">Exportar</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={handleExportPDF} className="gap-2">
+                <FileText className="h-4 w-4" /> Exportar PDF
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleExportExcel} className="gap-2">
+                <FileSpreadsheet className="h-4 w-4" /> Exportar Excel
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-2" />Nova Despesa</Button></DialogTrigger>
+            <DialogContent>
             <DialogHeader><DialogTitle>Cadastrar Despesa</DialogTitle></DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div><Label>Nome</Label><Input required value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} /></div>
@@ -70,6 +128,7 @@ const BusinessExpenses = () => {
             </form>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
