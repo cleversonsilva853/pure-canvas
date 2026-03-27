@@ -10,7 +10,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { useBusinessSales, useCreateBusinessSale, useDeleteBusinessSale, useBusinessProducts } from '@/hooks/useBusinessData';
 import { Plus, Trash2, Search, Filter, Download, FileText, FileSpreadsheet } from 'lucide-react';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 
 const fmt = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
@@ -79,7 +79,7 @@ const BusinessSales = () => {
       new Date(s.date).toLocaleDateString('pt-BR')
     ]);
 
-    (doc as any).autoTable({
+    autoTable(doc, {
       head: [['Produto', 'Quantidade', 'Valor Unit.', 'Valor Total', 'Data']],
       body: tableData,
       startY: 20,

@@ -11,7 +11,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { useBusinessExpenses, useCreateBusinessExpense, useDeleteBusinessExpense } from '@/hooks/useBusinessData';
 import { Plus, Trash2, Search, Filter, Download, FileText, FileSpreadsheet } from 'lucide-react';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 
 const fmt = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
@@ -63,7 +63,7 @@ const BusinessExpenses = () => {
       e.observation || ''
     ]);
 
-    (doc as any).autoTable({
+    autoTable(doc, {
       head: [['Nome', 'Categoria', 'Valor', 'Data', 'Observação']],
       body: tableData,
       startY: 20,
