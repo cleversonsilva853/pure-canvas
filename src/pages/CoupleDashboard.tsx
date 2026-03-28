@@ -15,6 +15,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { formatDate } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 import {
   BarChart,
@@ -420,8 +421,8 @@ const CoupleDashboard = () => {
                       <div>
                         <p className="text-sm font-medium">{t.description || (t.category as { name?: string } | null)?.name || 'Sem descrição'}</p>
                         <p className="text-xs text-muted-foreground flex items-center gap-1">
-                          {new Date(t.date).toLocaleDateString('pt-BR')}
-                          {(t.category as any)?.name ? ` • ${(t.category as any).name}` : ''}
+                          {formatDate(t.date)}
+                          {(t.category as { name?: string } | null)?.name ? ` • ${(t.category as { name: string }).name}` : ''}
                           <span className={cn(
                             "ml-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold uppercase",
                             t.user_id === transactions[0]?.user_id ? "bg-primary/10 text-primary" : "bg-blue-500/10 text-blue-600"

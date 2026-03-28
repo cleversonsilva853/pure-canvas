@@ -13,6 +13,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { formatDate } from '@/lib/utils';
 import {
   BarChart,
   Bar,
@@ -355,7 +356,7 @@ const Index = () => {
                       <div>
                         <p className="text-sm font-medium">{t.description || (t.category as { name?: string } | null)?.name || 'Sem descrição'}</p>
                         <p className="text-xs text-muted-foreground">
-                          {new Date(t.date).toLocaleDateString('pt-BR')}
+                          {formatDate(t.date)}
                           {(t.category as { name?: string } | null)?.name ? ` • ${(t.category as { name: string }).name}` : ''}
                         </p>
                       </div>

@@ -12,6 +12,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Plus, TrendingUp, TrendingDown, Search, Filter, Trash2 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { formatDate, getTodayInputDate } from '@/lib/utils';
 
 const formatCurrency = (value: number) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
@@ -33,7 +34,7 @@ const Transactions = () => {
   const [type, setType] = useState<string>('expense');
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [date, setDate] = useState(getTodayInputDate());
   const [categoryId, setCategoryId] = useState('');
   const [accountId, setAccountId] = useState('');
   const [creditCardId, setCreditCardId] = useState('');
@@ -112,7 +113,7 @@ const Transactions = () => {
     setType('expense');
     setAmount('');
     setDescription('');
-    setDate(new Date().toISOString().split('T')[0]);
+    setDate(getTodayInputDate());
     setCategoryId('');
     setAccountId('');
     setCreditCardId('');
@@ -287,7 +288,7 @@ const Transactions = () => {
                     <div>
                       <p className="text-sm font-medium">{t.description || 'Sem descrição'}</p>
                       <p className="text-xs text-muted-foreground">
-                        {new Date(t.date).toLocaleDateString('pt-BR')}
+                        {formatDate(t.date)}
                         {(t.category as { name?: string } | null)?.name ? ` • ${(t.category as { name: string }).name}` : ''}
                         {(t.account as { name?: string } | null)?.name ? ` • ${(t.account as { name: string }).name}` : ''}
                         {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}

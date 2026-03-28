@@ -15,6 +15,7 @@ import {
   ArrowRightLeft, TrendingUp, Eye, EyeOff, Edit2, Check, X,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { formatDate, getTodayInputDate } from '@/lib/utils';
 
 const formatCurrency = (value: number) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
@@ -155,18 +156,18 @@ const Accounts = () => {
         {
           user_id: user.id,
           account_id: fromAccountId,
-          type: 'transfer' as 'transfer',
+          type: 'transfer' as const,
           amount,
           description: `Transferência para ${toAccount.name}`,
-          date: new Date().toISOString().split('T')[0],
+          date: getTodayInputDate(),
         },
         {
           user_id: user.id,
           account_id: toAccountId,
-          type: 'transfer' as 'transfer',
+          type: 'transfer' as const,
           amount,
           description: `Transferência de ${fromAccount.name}`,
-          date: new Date().toISOString().split('T')[0],
+          date: getTodayInputDate(),
         },
       ]);
 

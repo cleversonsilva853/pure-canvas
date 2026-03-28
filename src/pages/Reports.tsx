@@ -7,6 +7,7 @@ import {
   LineChart, Line, PieChart, Pie, Cell,
 } from 'recharts';
 import { motion } from 'framer-motion';
+import { formatDate } from '@/lib/utils';
 import { FileDown, FileSpreadsheet } from 'lucide-react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -40,7 +41,7 @@ const Reports = () => {
         else existing.despesas += Number(t.amount);
       } else {
         map.set(t.date, {
-          date: new Date(t.date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
+          date: formatDate(t.date).split('/').slice(0, 2).join('/'),
           rawDate: t.date,
           receitas: t.type === 'income' ? Number(t.amount) : 0,
           despesas: t.type === 'expense' ? Number(t.amount) : 0,
@@ -100,7 +101,7 @@ const Reports = () => {
         startY: lastY + 16,
         head: [['Data', 'Descrição', 'Categoria', 'Tipo', 'Valor']],
         body: transactions.map(t => [
-          new Date(t.date).toLocaleDateString('pt-BR'),
+          formatDate(t.date),
           t.description || '-',
           (t.category as { name?: string } | null)?.name || '-',
           t.type === 'income' ? 'Receita' : 'Despesa',
@@ -144,7 +145,7 @@ const Reports = () => {
       const txRows = [
         ['Data', 'Descrição', 'Categoria', 'Tipo', 'Valor'],
         ...transactions.map(t => [
-          new Date(t.date).toLocaleDateString('pt-BR'),
+          formatDate(t.date),
           t.description || '-',
           (t.category as { name?: string } | null)?.name || '-',
           t.type === 'income' ? 'Receita' : 'Despesa',
