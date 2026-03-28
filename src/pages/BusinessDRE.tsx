@@ -69,6 +69,7 @@ const BusinessDRE = () => {
     });
 
     // Calculations
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const calculateMetrics = (periodSales: any[], periodExpenses: any[]) => {
       const revenue = periodSales.reduce((acc, s) => acc + Number(s.total_price), 0);
       

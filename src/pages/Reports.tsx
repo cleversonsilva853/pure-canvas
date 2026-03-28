@@ -23,7 +23,7 @@ const Reports = () => {
   const categoryData = useMemo(() => {
     const map = new Map<string, { name: string; value: number }>();
     transactions.filter(t => t.type === 'expense' && t.category).forEach(t => {
-      const cat = (t.category as any);
+    const cat = (t.category as { id: string; name: string } | null);
       const existing = map.get(cat.id);
       if (existing) existing.value += Number(t.amount);
       else map.set(cat.id, { name: cat.name, value: Number(t.amount) });
@@ -79,7 +79,7 @@ const Reports = () => {
 
     // Despesas por Categoria
     if (categoryData.length > 0) {
-      const lastY = (doc as any).lastAutoTable?.finalY ?? 80;
+      const lastY = (doc as unknown as { lastAutoTable?: { finalY: number } }).lastAutoTable?.finalY ?? 80;
       doc.setFontSize(13);
       doc.text('Despesas por Categoria', 14, lastY + 12);
       autoTable(doc, {
@@ -93,7 +93,7 @@ const Reports = () => {
 
     // Transações
     if (transactions.length > 0) {
-      const lastY = (doc as any).lastAutoTable?.finalY ?? 120;
+      const lastY = (doc as unknown as { lastAutoTable?: { finalY: number } }).lastAutoTable?.finalY ?? 120;
       doc.setFontSize(13);
       doc.text('Transações', 14, lastY + 12);
       autoTable(doc, {
@@ -102,7 +102,7 @@ const Reports = () => {
         body: transactions.map(t => [
           new Date(t.date).toLocaleDateString('pt-BR'),
           t.description || '-',
-          (t.category as any)?.name || '-',
+          (t.category as { name?: string } | null)?.name || '-',
           t.type === 'income' ? 'Receita' : 'Despesa',
           formatCurrency(Number(t.amount)),
         ]),
@@ -146,7 +146,7 @@ const Reports = () => {
         ...transactions.map(t => [
           new Date(t.date).toLocaleDateString('pt-BR'),
           t.description || '-',
-          (t.category as any)?.name || '-',
+          (t.category as { name?: string } | null)?.name || '-',
           t.type === 'income' ? 'Receita' : 'Despesa',
           Number(t.amount),
         ]),

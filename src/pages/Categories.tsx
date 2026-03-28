@@ -44,8 +44,8 @@ const Categories = () => {
       setDialogOpen(false);
       setName('');
       setColor('#3B82F6');
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Erro na criação de categoria');
     } finally {
       setLoading(false);
     }

@@ -54,8 +54,8 @@ const CreditCards = () => {
       setDialogOpen(false);
       setName('');
       setLimitTotal('');
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Erro ao cadastrar cartão');
     } finally {
       setLoading(false);
     }
@@ -116,8 +116,8 @@ const CreditCards = () => {
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
       queryClient.invalidateQueries({ queryKey: ['accounts'] });
       setPayDialogOpen(false);
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Erro ao pagar fatura');
     } finally {
       setLoading(false);
     }

@@ -96,12 +96,12 @@ const CoupleDashboard = () => {
     transactions
       .filter(t => t.type === 'expense' && t.category)
       .forEach(t => {
-        const catName = (t.category as any).name;
+        const catName = (t.category as { name?: string } | null)?.name;
         spentByCategory.set(catName, (spentByCategory.get(catName) || 0) + Number(t.amount));
       });
 
     return budgets.map(b => {
-      const catName = (b.category as any)?.name || 'Sem Categoria';
+      const catName = (b.category as { name?: string } | null)?.name || 'Sem Categoria';
       const spent = spentByCategory.get(catName) || 0;
       const progress = Math.min(Math.round((spent / Number(b.amount)) * 100), 100);
       const name = memberNames.get(b.user_id) || 'Privado';
@@ -418,7 +418,7 @@ const CoupleDashboard = () => {
                         )}
                       </div>
                       <div>
-                        <p className="text-sm font-medium">{t.description || (t.category as any)?.name || 'Sem descrição'}</p>
+                        <p className="text-sm font-medium">{t.description || (t.category as { name?: string } | null)?.name || 'Sem descrição'}</p>
                         <p className="text-xs text-muted-foreground flex items-center gap-1">
                           {new Date(t.date).toLocaleDateString('pt-BR')}
                           {(t.category as any)?.name ? ` • ${(t.category as any).name}` : ''}

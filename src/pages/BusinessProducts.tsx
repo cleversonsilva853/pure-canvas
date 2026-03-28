@@ -36,7 +36,7 @@ const BusinessProducts = () => {
     handleClose();
   };
 
-  const handleEdit = (product: any) => {
+  const handleEdit = (product: { id: string; name: string; sale_price: number | string; stock?: number | string | null }) => {
     setEditingId(product.id);
     setForm({
       name: product.name,

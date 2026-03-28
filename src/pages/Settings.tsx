@@ -46,7 +46,7 @@ const Settings = () => {
     setLoadingMembers(true);
     try {
       // Use the first member's couple_id if exists, otherwise create new
-      let coupleId = members[0]?.couple_id || crypto.randomUUID();
+      const coupleId = members[0]?.couple_id || crypto.randomUUID();
       
       // If memberUserId is provided, use it. Otherwise use current user ID.
       const targetUserId = memberUserId.trim() || user.id;
@@ -61,8 +61,8 @@ const Settings = () => {
       setMemberName('');
       setMemberUserId('');
       refetchMembers();
-    } catch (error: any) {
-      toast.error(error.message || 'Erro ao vincular membro');
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : 'Erro ao vincular membro');
     } finally {
       setLoadingMembers(false);
     }
@@ -74,7 +74,7 @@ const Settings = () => {
       if (error) throw error;
       toast.success('Membro removido');
       refetchMembers();
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.error('Erro ao remover');
     }
   };
@@ -113,8 +113,8 @@ const Settings = () => {
       toast.success('Conta casal criada! Verifique o email antes de acessar.');
       setCoupleEmail('');
       setCouplePassword('');
-    } catch (error: any) {
-      toast.error(error.message || 'Erro ao criar conta casal');
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : 'Erro ao criar conta casal');
     } finally {
       setCreatingCouple(false);
     }
@@ -126,13 +126,14 @@ const Settings = () => {
     try {
       const tables = ['transactions', 'budgets', 'goals', 'accounts', 'credit_cards', 'categories'] as const;
       for (const table of tables) {
-        const { error } = await (supabase.from(table) as any).delete().eq('user_id', user.id);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { error } = await (supabase.from(table as any)).delete().eq('user_id', user.id);
         if (error) throw new Error(`Erro em ${table}: ${error.message}`);
       }
       toast.success('Dados pessoais apagados!');
       queryClient.invalidateQueries();
-    } catch (error: any) {
-      toast.error(error.message || 'Erro ao apagar dados');
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : 'Erro ao apagar dados');
     } finally {
       setLoading(false);
     }

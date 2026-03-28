@@ -269,7 +269,7 @@ const Index = () => {
                     <div key={b.id} className="flex items-center gap-3 p-3 rounded-xl bg-destructive/5 border border-destructive/10">
                       <AlertTriangle className="h-4 w-4 text-destructive shrink-0" />
                       <span className="text-sm">
-                        Orçamento de <strong>{(b as any).category?.name || 'Categoria'}</strong> excedido
+                        Orçamento de <strong>{((b as unknown) as { category?: { name: string } }).category?.name || 'Categoria'}</strong> excedido
                       </span>
                     </div>
                   ))}
@@ -353,10 +353,10 @@ const Index = () => {
                         )}
                       </div>
                       <div>
-                        <p className="text-sm font-medium">{t.description || (t.category as any)?.name || 'Sem descrição'}</p>
+                        <p className="text-sm font-medium">{t.description || (t.category as { name?: string } | null)?.name || 'Sem descrição'}</p>
                         <p className="text-xs text-muted-foreground">
                           {new Date(t.date).toLocaleDateString('pt-BR')}
-                          {(t.category as any)?.name ? ` • ${(t.category as any).name}` : ''}
+                          {(t.category as { name?: string } | null)?.name ? ` • ${(t.category as { name: string }).name}` : ''}
                         </p>
                       </div>
                     </div>

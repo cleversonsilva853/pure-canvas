@@ -19,7 +19,7 @@ import { motion } from 'framer-motion';
 const formatCurrency = (value: number) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
 
-const accountIcons: Record<string, any> = {
+const accountIcons: Record<string, React.ElementType> = {
   checking: Landmark,
   savings: Banknote,
   cash: Wallet,
@@ -111,8 +111,8 @@ const Accounts = () => {
       setName('');
       setType('checking');
       setBalance('');
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Erro na requisição');
     } finally {
       setLoading(false);
     }
@@ -155,7 +155,7 @@ const Accounts = () => {
         {
           user_id: user.id,
           account_id: fromAccountId,
-          type: 'transfer' as any,
+          type: 'transfer' as 'transfer',
           amount,
           description: `Transferência para ${toAccount.name}`,
           date: new Date().toISOString().split('T')[0],
@@ -163,7 +163,7 @@ const Accounts = () => {
         {
           user_id: user.id,
           account_id: toAccountId,
-          type: 'transfer' as any,
+          type: 'transfer' as 'transfer',
           amount,
           description: `Transferência de ${fromAccount.name}`,
           date: new Date().toISOString().split('T')[0],
@@ -177,8 +177,8 @@ const Accounts = () => {
       setFromAccountId('');
       setToAccountId('');
       setTransferAmount('');
-    } catch (err: any) {
-      toast.error(err.message || 'Erro na transferência');
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Erro na transferência');
     } finally {
       setTransferLoading(false);
     }

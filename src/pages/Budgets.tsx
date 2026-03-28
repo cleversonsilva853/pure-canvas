@@ -47,8 +47,8 @@ const Budgets = () => {
       setDialogOpen(false);
       setCategoryId('');
       setAmount('');
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Erro ocorrido');
     } finally {
       setLoading(false);
     }
@@ -122,7 +122,7 @@ const Budgets = () => {
                 <Card className={`hover:shadow-md transition-shadow ${isExceeded ? 'border-destructive/50' : ''}`}>
                   <CardContent className="p-5">
                     <div className="flex items-center justify-between mb-4">
-                      <p className="font-medium">{(budget as any).category?.name || 'Categoria'}</p>
+                      <p className="font-medium">{((budget as unknown) as { category?: { name: string } }).category?.name || 'Categoria'}</p>
                       <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleDelete(budget.id)}>
                         <Trash2 className="h-3.5 w-3.5 text-muted-foreground" />
                       </Button>

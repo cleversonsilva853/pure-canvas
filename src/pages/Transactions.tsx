@@ -91,8 +91,8 @@ const Transactions = () => {
       queryClient.invalidateQueries({ queryKey: ['accounts'] });
       setDialogOpen(false);
       resetForm();
-    } catch (err: any) {
-      toast.error(err.message || 'Erro ao salvar');
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Erro ao salvar');
     } finally {
       setLoading(false);
     }
@@ -288,9 +288,10 @@ const Transactions = () => {
                       <p className="text-sm font-medium">{t.description || 'Sem descrição'}</p>
                       <p className="text-xs text-muted-foreground">
                         {new Date(t.date).toLocaleDateString('pt-BR')}
-                        {(t.category as any)?.name ? ` • ${(t.category as any).name}` : ''}
-                        {(t.account as any)?.name ? ` • ${(t.account as any).name}` : ''}
-                        {(t as any).card?.name ? ` • 💳 ${(t as any).card.name}` : ''}
+                        {(t.category as { name?: string } | null)?.name ? ` • ${(t.category as { name: string }).name}` : ''}
+                        {(t.account as { name?: string } | null)?.name ? ` • ${(t.account as { name: string }).name}` : ''}
+                        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                        {(t as unknown as { card?: { name: string } }).card?.name ? ` • 💳 ${(t as unknown as { card: { name: string } }).card.name}` : ''}
                       </p>
                     </div>
                   </div>

@@ -47,8 +47,8 @@ const Goals = () => {
       setTargetAmount('');
       setCurrentAmount('');
       setDeadline('');
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Erro ocorrido');
     } finally {
       setLoading(false);
     }

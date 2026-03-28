@@ -81,7 +81,7 @@ const BusinessPricing = () => {
     }
   };
 
-  const handleEditIngredient = (ing: any) => {
+  const handleEditIngredient = (ing: { id: string; name: string; unit: string; purchase_price: number | string; purchase_quantity: number | string; }) => {
     setEditingIngId(ing.id);
     setNewIng({
       name: ing.name,

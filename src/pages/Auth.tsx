@@ -39,8 +39,8 @@ const Auth = React.forwardRef<HTMLDivElement>((_, ref) => {
         if (error) throw error;
         toast.success('Conta criada! Verifique seu email para confirmar.');
       }
-    } catch (error: any) {
-      toast.error(error.message || 'Erro ao processar sua solicitação');
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : 'Erro ao processar sua solicitação');
     } finally {
       setLoading(false);
     }
