@@ -27,12 +27,17 @@ const Notifications = () => {
 
   const handleEdit = (notif: Notification) => {
     setEditingNotif(notif);
-    const [d, h] = notif.data_hora.split('T');
+    
+    // Suporte robusto para ISO strings ou formatos Postgres
+    const date = new Date(notif.data_hora);
+    const d = date.toISOString().split('T')[0];
+    const h = date.toTimeString().substring(0, 5);
+
     setForm({
       titulo: notif.titulo,
       descricao: notif.descricao || '',
       data: d,
-      hora: h.substring(0, 5)
+      hora: h
     });
     setOpen(true);
   };
@@ -134,8 +139,8 @@ const Notifications = () => {
                   />
                 </div>
               </div>
-              <Button type="submit" className="w-full" disabled={createNotification.isPending}>
-                {createNotification.isPending ? 'Salvando...' : 'Agendar'}
+              <Button type="submit" className="w-full" disabled={createNotification.isPending || updateNotification.isPending}>
+                {createNotification.isPending || updateNotification.isPending ? 'Salvando...' : (editingNotif ? 'Salvar Edição' : 'Agendar')}
               </Button>
             </form>
           </DialogContent>
@@ -202,7 +207,7 @@ const Notifications = () => {
                         </div>
                         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                           <Clock className="h-3 w-3" />
-                          {notif.data_hora.split('T')[1].substring(0, 5)}
+                          {new Date(notif.data_hora).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                         </div>
                       </div>
                     </div>
