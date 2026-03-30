@@ -107,13 +107,51 @@ serve(async (req) => {
           }).eq('id', notification.id)
         );
       } else {
-        // Sucesso
-        promises.push(
-          supabaseClient.from('notifications').update({ 
-            status: 'sent', 
-            updated_at: new Date().toISOString() 
-          }).eq('id', notification.id)
-        );
+        const recurrence = notification.recurrence || 'none';
+        
+        if (recurrence !== 'none') {
+          // Reagendar para a próxima data de acordo com a recorrência
+          const currentScheduled = new Date(notification.scheduled_for);
+          let nextDate = new Date(currentScheduled);
+
+          switch (recurrence) {
+            case 'daily':
+              nextDate.setDate(nextDate.getDate() + 1);
+              break;
+            case 'weekdays':
+              // Pular para o próximo dia da semana (seg-sex)
+              do {
+                nextDate.setDate(nextDate.getDate() + 1);
+              } while (nextDate.getDay() === 0 || nextDate.getDay() === 6);
+              break;
+            case 'weekly':
+              nextDate.setDate(nextDate.getDate() + 7);
+              break;
+            case 'monthly':
+              nextDate.setMonth(nextDate.getMonth() + 1);
+              break;
+            case 'yearly':
+              nextDate.setFullYear(nextDate.getFullYear() + 1);
+              break;
+          }
+
+          // Atualizar a notificação reagendando com status pendente
+          promises.push(
+            supabaseClient.from('notifications').update({ 
+              status: 'pending',
+              scheduled_for: nextDate.toISOString(),
+              updated_at: new Date().toISOString() 
+            }).eq('id', notification.id)
+          );
+        } else {
+          // Não recorrente: marcar como enviado
+          promises.push(
+            supabaseClient.from('notifications').update({ 
+              status: 'sent', 
+              updated_at: new Date().toISOString() 
+            }).eq('id', notification.id)
+          );
+        }
       }
     }
 

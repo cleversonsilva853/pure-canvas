@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Bell, Plus, Trash2, Edit, AlertCircle, RefreshCw } from "lucide-react";
+import { Bell, Plus, Trash2, Edit, AlertCircle, RefreshCw, Repeat } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -18,6 +18,16 @@ type Notification = {
   description: string;
   scheduled_for: string;
   status: string;
+  recurrence?: string;
+};
+
+const recurrenceLabels: Record<string, string> = {
+  none: '',
+  daily: 'Diariamente',
+  weekdays: 'Dias da semana',
+  weekly: 'Semanalmente',
+  monthly: 'Mensalmente',
+  yearly: 'Anualmente',
 };
 
 export default function Notifications() {
@@ -149,6 +159,12 @@ export default function Notifications() {
                       <span className="text-sm font-medium">
                         {format(scheduledDate, "dd 'de' MMMM 'às' HH:mm", { locale: ptBR })}
                       </span>
+                      {n.recurrence && n.recurrence !== 'none' && (
+                        <span className="text-xs text-primary flex items-center gap-1 mt-0.5">
+                          <Repeat className="h-3 w-3" />
+                          {recurrenceLabels[n.recurrence] || n.recurrence}
+                        </span>
+                      )}
                     </div>
                     
                     <div className="flex gap-1">

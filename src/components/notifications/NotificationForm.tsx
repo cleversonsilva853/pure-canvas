@@ -4,9 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
+import { CalendarClock, Repeat } from "lucide-react";
 
 type NotificationFormProps = {
   open: boolean;
@@ -15,11 +17,21 @@ type NotificationFormProps = {
   editingNotification?: any;
 };
 
+const recurrenceOptions = [
+  { value: 'none', label: 'Não repetir' },
+  { value: 'daily', label: 'Diariamente' },
+  { value: 'weekdays', label: 'Dias da semana' },
+  { value: 'weekly', label: 'Semanalmente' },
+  { value: 'monthly', label: 'Mensalmente' },
+  { value: 'yearly', label: 'Anualmente' },
+];
+
 export const NotificationForm = ({ open, onOpenChange, onSuccess, editingNotification }: NotificationFormProps) => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
+  const [recurrence, setRecurrence] = useState("none");
   const [loading, setLoading] = useState(false);
   const { session } = useAuth();
 
@@ -37,11 +49,13 @@ export const NotificationForm = ({ open, onOpenChange, onSuccess, editingNotific
       const hours = String(scheduledDate.getHours()).padStart(2, '0');
       const minutes = String(scheduledDate.getMinutes()).padStart(2, '0');
       setTime(`${hours}:${minutes}`);
+      setRecurrence(editingNotification.recurrence || "none");
     } else {
       setTitle("");
       setDescription("");
       setDate("");
       setTime("");
+      setRecurrence("none");
     }
   }, [editingNotification, open]);
 
@@ -63,8 +77,8 @@ export const NotificationForm = ({ open, onOpenChange, onSuccess, editingNotific
     try {
       const scheduled_for = scheduledDateObj.toISOString();
       const bodyArgs = editingNotification 
-        ? { title, description, scheduled_for, status: 'pending' }
-        : { title, description, scheduled_for, status: 'pending', user_id: session?.user?.id };
+        ? { title, description, scheduled_for, status: 'pending', recurrence }
+        : { title, description, scheduled_for, status: 'pending', recurrence, user_id: session?.user?.id };
 
       let submitError = null;
 
@@ -126,7 +140,9 @@ export const NotificationForm = ({ open, onOpenChange, onSuccess, editingNotific
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="date">Data</Label>
+              <Label htmlFor="date" className="flex items-center gap-1.5">
+                <CalendarClock className="h-3.5 w-3.5" /> Data
+              </Label>
               <Input
                 id="date"
                 type="date"
@@ -145,6 +161,23 @@ export const NotificationForm = ({ open, onOpenChange, onSuccess, editingNotific
                 required
               />
             </div>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="recurrence" className="flex items-center gap-1.5">
+              <Repeat className="h-3.5 w-3.5" /> Repetir
+            </Label>
+            <Select value={recurrence} onValueChange={setRecurrence}>
+              <SelectTrigger id="recurrence">
+                <SelectValue placeholder="Selecione a recorrência" />
+              </SelectTrigger>
+              <SelectContent>
+                {recurrenceOptions.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <DialogFooter className="pt-4">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
