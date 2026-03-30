@@ -2,11 +2,14 @@ self.addEventListener('push', function (event) {
   if (event.data) {
     try {
       const data = event.data.json();
-      const title = data.title || "InforControl Lembrete";
+      const title = data.title || "Lembrete InforControl";
       const options = {
         body: data.body || "",
-        icon: '/favicon.ico', // Ajuste para o ícone do PWA se disponível (ex: /icon-192x192.png)
-        badge: '/favicon.ico',
+        icon: '/icons/icon-192.png',
+        badge: '/icons/icon-192.png',
+        vibrate: [200, 100, 200, 100, 200, 100, 200],
+        requireInteraction: true,
+        silent: false,
         data: data.data || { url: '/notifications' }
       };
       
@@ -24,13 +27,11 @@ self.addEventListener('notificationclick', function (event) {
 
   event.waitUntil(
     clients.matchAll({ type: 'window' }).then((windowClients) => {
-      // Focar janela já aberta
       for (let client of windowClients) {
         if (client.url.includes(targetUrl) && 'focus' in client) {
           return client.focus();
         }
       }
-      // Ou abrir uma nova aba
       if (clients.openWindow) {
         return clients.openWindow(targetUrl);
       }

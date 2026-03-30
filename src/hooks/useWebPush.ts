@@ -25,7 +25,7 @@ export function useWebPush() {
       setIsSupported(true);
       setPermission(Notification.permission);
       
-      navigator.serviceWorker.register("/sw.js").then((registration) => {
+      navigator.serviceWorker.ready.then((registration) => {
         registration.pushManager.getSubscription().then((sub) => {
           setIsSubscribed(sub !== null);
         });
