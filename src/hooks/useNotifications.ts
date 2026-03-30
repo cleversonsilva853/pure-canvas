@@ -22,11 +22,11 @@ export const useNotifications = () => {
     queryKey: ['notifications', user?.id],
     queryFn: async () => {
       if (!user) return [];
-      const { data, error } = await supabase
-        .from('notifications')
+      const { data, error } = await (supabase
+        .from('notifications' as any)
         .select('*')
-        .eq('user_id', user.id)
-        .order('data_hora', { ascending: false });
+        .eq('user_id' as any, user.id)
+        .order('data_hora', { ascending: false }) as any);
       
       if (error) throw error;
       return data as Notification[];
@@ -44,30 +44,34 @@ export const useNotifications = () => {
         });
 
         if (error) throw error;
-        return data;
+        return { ...data, type: 'push' };
       } catch (err) {
         console.warn("Edge Function failed, falling back to direct DB insert", err);
         // Fallback: insert directly to DB (no OneSignal scheduling)
-        const { data, error } = await supabase
-          .from('notifications')
+        const { data, error } = await (supabase
+          .from('notifications' as any)
           .insert([{
             ...newNotif,
             user_id: user.id,
             status: 'pendente'
           }])
           .select()
-          .single();
+          .single() as any);
 
         if (error) throw error;
-        return data;
+        return { ...data, type: 'local' };
       }
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
-      toast.success("Notificação agendada com sucesso!");
+      if (result.type === 'push') {
+        toast.success("Notificação agendada no OneSignal!");
+      } else {
+        toast.warning("Lembrete salvo, mas o agendamento Push falhou. Verifique as chaves do OneSignal.");
+      }
     },
     onError: (err: any) => {
-      toast.error("Erro ao agendar notificação: " + err.message);
+      toast.error("Erro ao agendar: " + err.message);
     }
   });
 
@@ -77,32 +81,36 @@ export const useNotifications = () => {
 
       try {
         const { data, error } = await supabase.functions.invoke('create-notification', {
-          body: { ...notif, isUpdate: true } // I'll update the Edge Function to handle this
+          body: { ...notif, isUpdate: true }
         });
 
         if (error) throw error;
-        return data;
+        return { ...data, type: 'push' };
       } catch (err) {
         console.warn("Edge Function update failed, falling back to direct DB update", err);
-        const { data, error } = await supabase
-          .from('notifications')
+        const { data, error } = await (supabase
+          .from('notifications' as any)
           .update({
             titulo: notif.titulo,
             descricao: notif.descricao,
             data_hora: notif.data_hora,
             status: 'pendente'
-          })
-          .eq('id', notif.id)
+          } as any)
+          .eq('id' as any, notif.id)
           .select()
-          .single();
+          .single() as any);
 
         if (error) throw error;
-        return data;
+        return { ...data, type: 'local' };
       }
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
-      toast.success("Notificação atualizada!");
+      if (result.type === 'push') {
+        toast.success("Notificação atualizada no OneSignal!");
+      } else {
+        toast.warning("Alteração salva localmente, mas Push falhou.");
+      }
     },
     onError: (err: any) => {
       toast.error("Erro ao atualizar: " + err.message);
@@ -111,10 +119,10 @@ export const useNotifications = () => {
 
   const deleteNotification = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from('notifications')
+      const { error } = await (supabase
+        .from('notifications' as any)
         .delete()
-        .eq('id', id);
+        .eq('id' as any, id) as any);
       if (error) throw error;
     },
     onSuccess: () => {

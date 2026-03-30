@@ -1,10 +1,11 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
+import * as webpush from "https://esm.sh/web-push@3.6.6";
 
-const ONESIGNAL_APP_ID = Deno.env.get("ONESIGNAL_APP_ID");
-const ONESIGNAL_REST_API_KEY = Deno.env.get("ONESIGNAL_REST_API_KEY");
+const VAPID_PUBLIC_KEY = Deno.env.get("VAPID_PUBLIC_KEY");
+const VAPID_PRIVATE_KEY = Deno.env.get("VAPID_PRIVATE_KEY");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
-const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY");
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -17,96 +18,87 @@ serve(async (req) => {
   }
 
   try {
-    const supabase = createClient(SUPABASE_URL!, SUPABASE_ANON_KEY!);
-    const authHeader = req.headers.get("Authorization")!;
-    const { data: { user }, error: authError } = await supabase.auth.getUser(authHeader.replace("Bearer ", ""));
+    const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
+    
+    // Ler o corpo primeiro para saber quem é o usuário
+    const body = await req.json();
+    const { titulo, descricao, data_hora, isUpdate, id, isCron, user_id: cron_user_id } = body;
 
-    if (authError || !user) {
-      return new Response(JSON.stringify({ error: "Não autorizado" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    let target_user_id;
+
+    if (isCron && cron_user_id) {
+      // Se for chamado pelo Cron, confiamos no ID passado (pois usa Service Role)
+      target_user_id = cron_user_id;
+    } else {
+      // Se for chamado pelo front, validamos o usuário via Bearer token
+      const authHeader = req.headers.get("Authorization")!;
+      const { data: { user }, error: authError } = await supabase.auth.getUser(authHeader.replace("Bearer ", ""));
+      if (authError || !user) {
+        return new Response(JSON.stringify({ error: "Não autorizado" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      target_user_id = user.id;
     }
 
-    const { titulo, descricao, data_hora, isUpdate, id } = await req.json();
+    // 1. Configurar VAPID
+    webpush.setVapidDetails(
+      'mailto:exemplo@seu-dominio.com',
+      VAPID_PUBLIC_KEY!,
+      VAPID_PRIVATE_KEY!
+    );
 
-    let onesignalId = null;
+    // 2. Buscar assinaturas
+    const { data: subs } = await supabase
+      .from("push_subscriptions")
+      .select("endpoint, p256dh, auth")
+      .eq("user_id", target_user_id);
 
-    // 1. Agendar ou Atualizar no OneSignal
-    if (isUpdate && id) {
-      // Buscar o onesignal_id atual da notificação para atualizar no OneSignal
-      const { data: existing } = await supabase
-        .from("notifications")
-        .select("onesignal_id")
-        .eq("id", id)
-        .single();
-      
-      if (existing?.onesignal_id) {
-          await fetch(`https://onesignal.com/api/v1/notifications/${existing.onesignal_id}`, {
-            method: "PUT",
-            headers: {
-              "Content-Type": "application/json; charset=utf-8",
-              "Authorization": `Basic ${ONESIGNAL_REST_API_KEY}`,
-            },
-            body: JSON.stringify({
-              app_id: ONESIGNAL_APP_ID,
-              contents: { en: titulo, pt: titulo },
-              headings: { en: titulo, pt: titulo },
-              subtitle: { en: descricao, pt: descricao },
-              send_after: data_hora,
-            }),
-          });
-          onesignalId = existing.onesignal_id;
-      }
-    } else {
-      const onesignalResponse = await fetch("https://onesignal.com/api/v1/notifications", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json; charset=utf-8",
-          "Authorization": `Basic ${ONESIGNAL_REST_API_KEY}`,
-        },
-        body: JSON.stringify({
-          app_id: ONESIGNAL_APP_ID,
-          include_external_user_ids: [user.id],
-          contents: { en: titulo, pt: titulo },
-          headings: { en: titulo, pt: titulo },
-          subtitle: { en: descricao, pt: descricao },
-          send_after: data_hora,
-        }),
+    if (subs && subs.length > 0) {
+      const payload = JSON.stringify({
+        title: titulo,
+        body: descricao || "Lembrete do InforControl",
+        url: "/notifications"
       });
 
-      const onesignalData = await onesignalResponse.json();
-      if (!onesignalResponse.ok) {
-          throw new Error(onesignalData.errors?.[0] || "Erro ao agendar no OneSignal");
+      for (const sub of subs) {
+        try {
+          await webpush.sendNotification(
+            {
+              endpoint: sub.endpoint,
+              keys: {
+                p256dh: sub.p256dh,
+                auth: sub.auth
+              }
+            },
+            payload
+          );
+        } catch (err) {
+          console.error("Erro no envio:", err);
+          // Se o endpoint for inválido, poderíamos limpar a assinatura aqui
+        }
       }
-      onesignalId = onesignalData.id;
     }
 
-    // 2. Salvar ou Atualizar no Banco de Dados
-    let result;
-    if (isUpdate && id) {
-      const { data, error: dbError } = await supabase
-        .from("notifications")
-        .update({ titulo, descricao, data_hora, status: "pendente" })
-        .eq("id", id)
-        .select()
-        .single();
-      if (dbError) throw dbError;
-      result = data;
-    } else {
-      const { data, error: dbError } = await supabase
-        .from("notifications")
-        .insert([
-          {
-            user_id: user.id,
-            titulo,
-            descricao,
-            data_hora,
-            status: "pendente",
-            onesignal_id: onesignalId,
-          },
-        ])
-        .select()
-        .single();
-      if (dbError) throw dbError;
-      result = data;
+    // 3. Salvar no Banco (apenas se for criação/update via Front)
+    let result = { message: "Disparado via Cron" };
+    if (!isCron) {
+      if (isUpdate && id) {
+        const { data, error } = await supabase
+          .from("notifications")
+          .update({ titulo, descricao, data_hora, status: "pendente" })
+          .eq("id", id)
+          .select()
+          .single();
+        if (error) throw error;
+        result = data;
+      } else {
+        const { data, error } = await supabase
+          .from("notifications")
+          .insert([{ user_id: target_user_id, titulo, descricao, data_hora, status: "pendente" }])
+          .select()
+          .single();
+        if (error) throw error;
+        result = data;
+      }
     }
 
     return new Response(JSON.stringify(result), {

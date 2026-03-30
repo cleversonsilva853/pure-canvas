@@ -11,11 +11,12 @@ import { useNotifications, Notification } from '@/hooks/useNotifications';
 import { formatDate } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import OneSignal from 'react-onesignal';
+import { useNativePush } from '@/hooks/useNativePush';
 import { toast } from 'sonner';
 
 const Notifications = () => {
   const { notifications, isLoading, createNotification, updateNotification, deleteNotification } = useNotifications();
+  const { subscribe } = useNativePush();
   const [open, setOpen] = useState(false);
   const [editingNotif, setEditingNotif] = useState<Notification | null>(null);
   const [filter, setFilter] = useState<'todos' | 'pendente' | 'enviado'>('todos');
@@ -68,19 +69,8 @@ const Notifications = () => {
     setOpen(false);
   };
 
-  const handlePermission = async () => {
-    try {
-      // @ts-ignore - Some versions uses different prompt methods
-      if ((OneSignal as any).showSlidedownPrompt) {
-        await (OneSignal as any).showSlidedownPrompt();
-      } else {
-        await (OneSignal as any).Slidedown.show();
-      }
-      toast.info("Solicitando permissão para notificações...");
-    } catch (err) {
-      console.error(err);
-      toast.error("Erro ao solicitar permissão.");
-    }
+  const handleActivatePush = async () => {
+    await subscribe();
   };
 
   const filteredNotifications = notifications.filter(n => 
@@ -156,9 +146,31 @@ const Notifications = () => {
                   />
                 </div>
               </div>
-              <Button type="submit" className="w-full" disabled={createNotification.isPending || updateNotification.isPending}>
-                {createNotification.isPending || updateNotification.isPending ? 'Salvando...' : (editingNotif ? 'Salvar Edição' : 'Agendar')}
-              </Button>
+              <div className="flex gap-2">
+                <Button type="submit" className="flex-1" disabled={createNotification.isPending || updateNotification.isPending}>
+                  {createNotification.isPending || updateNotification.isPending ? 'Salvando...' : (editingNotif ? 'Salvar Edição' : 'Agendar')}
+                </Button>
+                {!editingNotif && (
+                  <Button 
+                    type="button" 
+                    variant="outline"
+                    onClick={() => {
+                      const now = new Date();
+                      now.setMinutes(now.getMinutes() + 2); // 2 minutos no futuro
+                      const d = now.toISOString().split('T')[0];
+                      const h = now.toTimeString().substring(0, 5);
+                      setForm({
+                        titulo: "Teste de Notificação",
+                        descricao: "Esta é uma notificação de teste agendada para daqui a 2 minutos.",
+                        data: d,
+                        hora: h
+                      });
+                    }}
+                  >
+                    Teste
+                  </Button>
+                )}
+              </div>
             </form>
           </DialogContent>
         </Dialog>
@@ -266,7 +278,7 @@ const Notifications = () => {
               </p>
             </div>
           </div>
-          <Button variant="outline" size="sm" onClick={handlePermission} className="border-primary/20 hover:bg-primary/10">
+          <Button variant="outline" size="sm" onClick={handleActivatePush} className="border-primary/20 hover:bg-primary/10">
             Habilitar No Navegador
           </Button>
         </CardContent>

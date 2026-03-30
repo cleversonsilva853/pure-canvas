@@ -10,7 +10,6 @@ import { AppModeProvider } from "@/contexts/AppModeContext";
 import AppLayout from "@/components/layout/AppLayout";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
 import PWAUpdatePrompt from "@/components/PWAUpdatePrompt";
-import { initOneSignal } from "@/lib/oneSignal";
 import Auth from "@/pages/Auth";
 import Index from "@/pages/Index";
 import Transactions from "@/pages/Transactions";
@@ -52,10 +51,6 @@ const AuthRoute = React.forwardRef<HTMLDivElement>((_, ref) => {
 AuthRoute.displayName = 'AuthRoute';
 
 const App = () => {
-  React.useEffect(() => {
-    initOneSignal();
-  }, []);
-
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
