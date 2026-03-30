@@ -19,7 +19,6 @@ import Budgets from "@/pages/Budgets";
 import Goals from "@/pages/Goals";
 import Reports from "@/pages/Reports";
 import Categories from "@/pages/Categories";
-import Notifications from "@/pages/Notifications";
 import Settings from "@/pages/Settings";
 import CoupleDashboard from "@/pages/CoupleDashboard";
 import NotFound from "@/pages/NotFound";
@@ -74,7 +73,6 @@ const App = () => {
                     <Route path="goals" element={<Goals />} />
                     <Route path="reports" element={<Reports />} />
                     <Route path="categories" element={<Categories />} />
-                    <Route path="notifications" element={<Notifications />} />
                     <Route path="settings" element={<Settings />} />
                     <Route path="business" element={<BusinessDashboard />} />
                     <Route path="business/expenses" element={<BusinessExpenses />} />

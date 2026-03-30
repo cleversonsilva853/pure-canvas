@@ -26,7 +26,6 @@ import {
   User as UserIcon,
   Heart,
   TrendingUp,
-  Bell,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState, useEffect } from 'react';
@@ -42,7 +41,6 @@ const personalNavItems = [
   { to: '/budgets', icon: PieChart, label: 'Orçamentos' },
   { to: '/goals', icon: Target, label: 'Metas' },
   { to: '/reports', icon: BarChart3, label: 'Relatórios' },
-  { to: '/notifications', icon: Bell, label: 'Notificações' },
   { to: '/settings', icon: SettingsIcon, label: 'Configurações' },
 ];
 
