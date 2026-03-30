@@ -13,16 +13,12 @@ import { Plus, Trash2, Search, Filter, Download, FileText, FileSpreadsheet } fro
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
+import { formatDate, getTodayInputDate } from '@/lib/utils';
 
 const fmt = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
 
 const CATEGORIES = ['Ingredientes', 'Aluguel', 'Funcionários', 'Energia', 'Água', 'Embalagens', 'Marketing', 'Manutenção', 'Outros'];
 
-const formatDate = (dateStr: string) => {
-  if (!dateStr) return '';
-  const [year, month, day] = dateStr.split('-').map(Number);
-  return new Date(year, month - 1, day).toLocaleDateString('pt-BR');
-};
 
 
 const BusinessExpenses = () => {
@@ -30,12 +26,12 @@ const BusinessExpenses = () => {
   const createExpense = useCreateBusinessExpense();
   const deleteExpense = useDeleteBusinessExpense();
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ name: '', category: 'Outros', amount: '', date: new Date().toISOString().slice(0, 10), observation: '' });
+  const [form, setForm] = useState({ name: '', category: 'Outros', amount: '', date: getTodayInputDate(), observation: '' });
   const [searchTerm, setSearchTerm] = useState('');
   const [filterMonth, setFilterMonth] = useState<string>(String(new Date().getMonth()));
   const [filterYear, setFilterYear] = useState<string>(String(new Date().getFullYear()));
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = getTodayInputDate();
 
   const filteredExpenses = useMemo(() => {
     return expenses.filter(e => {
@@ -54,7 +50,7 @@ const BusinessExpenses = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     await createExpense.mutateAsync({ ...form, amount: Number(form.amount) });
-    setForm({ name: '', category: 'Outros', amount: '', date: new Date().toISOString().slice(0, 10), observation: '' });
+    setForm({ name: '', category: 'Outros', amount: '', date: getTodayInputDate(), observation: '' });
     setOpen(false);
   };
 

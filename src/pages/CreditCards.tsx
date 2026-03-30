@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 import { Plus, CreditCard as CreditCardIcon, Trash2, Receipt } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Progress } from '@/components/ui/progress';
+import { getTodayInputDate } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const formatCurrency = (value: number) =>
@@ -91,7 +92,7 @@ const CreditCards = () => {
         amount: amountToPay,
         description: `Pagamento Fatura: ${card?.name}`,
         account_id: targetAccountId,
-        date: new Date().toISOString().split('T')[0],
+        date: getTodayInputDate(),
         is_paid: true
       });
       if (txError) throw txError;

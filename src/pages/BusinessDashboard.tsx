@@ -4,6 +4,7 @@ import { useBusinessExpenses, useBusinessSales, useBusinessAccounts } from '@/ho
 import { DollarSign, TrendingDown, TrendingUp, Percent, Wallet } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { getTodayInputDate } from '@/lib/utils';
 
 const fmt = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
 
@@ -12,7 +13,7 @@ const BusinessDashboard = () => {
   const { data: sales = [] } = useBusinessSales();
   const { data: accounts = [] } = useBusinessAccounts();
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = getTodayInputDate();
   const currentMonth = new Date().getMonth();
   const currentYear = new Date().getFullYear();
 
@@ -22,8 +23,14 @@ const BusinessDashboard = () => {
     const totalBalance = accounts.reduce((s, a) => s + Number(a.balance), 0);
     const dailyExpenses = expenses.filter(e => e.date === today).reduce((s, e) => s + Number(e.amount), 0);
     const dailySales = sales.filter(e => e.date === today).reduce((s, e) => s + Number(e.total_price), 0);
-    const monthlyExpenses = expenses.filter(e => { const d = new Date(e.date); return d.getMonth() === currentMonth && d.getFullYear() === currentYear; }).reduce((s, e) => s + Number(e.amount), 0);
-    const monthlySales = sales.filter(e => { const d = new Date(e.date); return d.getMonth() === currentMonth && d.getFullYear() === currentYear; }).reduce((s, e) => s + Number(e.total_price), 0);
+    const monthlyExpenses = expenses.filter(e => { 
+      const [y, m] = e.date.split('-').map(Number);
+      return (m - 1) === currentMonth && y === currentYear; 
+    }).reduce((s, e) => s + Number(e.amount), 0);
+    const monthlySales = sales.filter(e => { 
+      const [y, m] = e.date.split('-').map(Number);
+      return (m - 1) === currentMonth && y === currentYear; 
+    }).reduce((s, e) => s + Number(e.total_price), 0);
 
     const totalProfit = totalSales - totalExpenses;
     const dailyProfit = dailySales - dailyExpenses;
@@ -41,8 +48,16 @@ const BusinessDashboard = () => {
       const key = `${d.getFullYear()}-${d.getMonth()}`;
       months[key] = { name: monthNames[d.getMonth()], vendas: 0, despesas: 0 };
     }
-    sales.forEach(s => { const d = new Date(s.date); const k = `${d.getFullYear()}-${d.getMonth()}`; if (months[k]) months[k].vendas += Number(s.total_price); });
-    expenses.forEach(e => { const d = new Date(e.date); const k = `${d.getFullYear()}-${d.getMonth()}`; if (months[k]) months[k].despesas += Number(e.amount); });
+    sales.forEach(s => { 
+      const [y, m] = s.date.split('-').map(Number);
+      const k = `${y}-${m - 1}`; 
+      if (months[k]) months[k].vendas += Number(s.total_price); 
+    });
+    expenses.forEach(e => { 
+      const [y, m] = e.date.split('-').map(Number);
+      const k = `${y}-${m - 1}`; 
+      if (months[k]) months[k].despesas += Number(e.amount); 
+    });
     return Object.values(months);
   }, [expenses, sales, currentMonth, currentYear]);
 

@@ -85,7 +85,10 @@ const Index = () => {
     for (let i = 6; i >= 0; i--) {
       const d = new Date();
       d.setDate(d.getDate() - i);
-      const dateStr = d.toISOString().split('T')[0];
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      const dateStr = `${year}-${month}-${day}`;
       const dayName = d.toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', '');
       let receitas = 0;
       let despesas = 0;

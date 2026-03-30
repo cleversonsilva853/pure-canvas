@@ -12,14 +12,10 @@ import { Plus, Trash2, Search, Filter, Download, FileText, FileSpreadsheet } fro
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
+import { formatDate, getTodayInputDate } from '@/lib/utils';
 
 const fmt = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
 
-const formatDate = (dateStr: string) => {
-  if (!dateStr) return '';
-  const [year, month, day] = dateStr.split('-').map(Number);
-  return new Date(year, month - 1, day).toLocaleDateString('pt-BR');
-};
 
 
 const BusinessSales = () => {
@@ -28,7 +24,7 @@ const BusinessSales = () => {
   const createSale = useCreateBusinessSale();
   const deleteSale = useDeleteBusinessSale();
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ product_id: '', product_name: '', quantity: '1', unit_price: '', date: new Date().toISOString().slice(0, 10) });
+  const [form, setForm] = useState({ product_id: '', product_name: '', quantity: '1', unit_price: '', date: getTodayInputDate() });
   const [searchTerm, setSearchTerm] = useState('');
   const [filterMonth, setFilterMonth] = useState<string>(String(new Date().getMonth()));
   const [filterYear, setFilterYear] = useState<string>(String(new Date().getFullYear()));
@@ -70,7 +66,7 @@ const BusinessSales = () => {
       total_price: totalPrice,
       date: form.date,
     });
-    setForm({ product_id: '', product_name: '', quantity: '1', unit_price: '', date: new Date().toISOString().slice(0, 10) });
+    setForm({ product_id: '', product_name: '', quantity: '1', unit_price: '', date: getTodayInputDate() });
     setOpen(false);
   };
 
