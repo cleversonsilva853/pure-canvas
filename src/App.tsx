@@ -10,6 +10,7 @@ import { AppModeProvider } from "@/contexts/AppModeContext";
 import AppLayout from "@/components/layout/AppLayout";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
 import PWAUpdatePrompt from "@/components/PWAUpdatePrompt";
+import { initOneSignal } from "@/lib/oneSignal";
 import Auth from "@/pages/Auth";
 import Index from "@/pages/Index";
 import Transactions from "@/pages/Transactions";
@@ -19,6 +20,7 @@ import Budgets from "@/pages/Budgets";
 import Goals from "@/pages/Goals";
 import Reports from "@/pages/Reports";
 import Categories from "@/pages/Categories";
+import Notifications from "@/pages/Notifications";
 import Settings from "@/pages/Settings";
 import CoupleDashboard from "@/pages/CoupleDashboard";
 import NotFound from "@/pages/NotFound";
@@ -49,46 +51,54 @@ const AuthRoute = React.forwardRef<HTMLDivElement>((_, ref) => {
 });
 AuthRoute.displayName = 'AuthRoute';
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <ThemeProvider>
-      <AuthProvider>
-        <AppModeProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <PWAInstallPrompt />
-            <PWAUpdatePrompt />
-            <BrowserRouter>
-              <Routes>
-                <Route path="/auth" element={<AuthRoute />} />
-                <Route path="/" element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
-                  <Route index element={<Index />} />
-                  <Route path="couple-dashboard" element={<CoupleDashboard />} />
-                  <Route path="transactions" element={<Transactions />} />
-                  <Route path="accounts" element={<Accounts />} />
-                  <Route path="credit-cards" element={<CreditCards />} />
-                  <Route path="budgets" element={<Budgets />} />
-                  <Route path="goals" element={<Goals />} />
-                  <Route path="reports" element={<Reports />} />
-                  <Route path="categories" element={<Categories />} />
-                  <Route path="settings" element={<Settings />} />
-                  <Route path="business" element={<BusinessDashboard />} />
-                  <Route path="business/expenses" element={<BusinessExpenses />} />
-                  <Route path="business/sales" element={<BusinessSales />} />
-                  <Route path="business/products" element={<BusinessProducts />} />
-                  <Route path="business/pricing" element={<BusinessPricing />} />
-                  <Route path="business/dre" element={<BusinessDRE />} />
-                  <Route path="business/accounts" element={<BusinessAccounts />} />
-                </Route>
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </BrowserRouter>
-          </TooltipProvider>
-        </AppModeProvider>
-      </AuthProvider>
-    </ThemeProvider>
-  </QueryClientProvider>
-);
+const App = () => {
+  React.useEffect(() => {
+    initOneSignal();
+  }, []);
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider>
+        <AuthProvider>
+          <AppModeProvider>
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
+              <PWAInstallPrompt />
+              <PWAUpdatePrompt />
+              <BrowserRouter>
+                <Routes>
+                  <Route path="/auth" element={<AuthRoute />} />
+                  <Route path="/" element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
+                    <Route index element={<Index />} />
+                    <Route path="couple-dashboard" element={<CoupleDashboard />} />
+                    <Route path="transactions" element={<Transactions />} />
+                    <Route path="accounts" element={<Accounts />} />
+                    <Route path="credit-cards" element={<CreditCards />} />
+                    <Route path="budgets" element={<Budgets />} />
+                    <Route path="goals" element={<Goals />} />
+                    <Route path="reports" element={<Reports />} />
+                    <Route path="categories" element={<Categories />} />
+                    <Route path="notifications" element={<Notifications />} />
+                    <Route path="settings" element={<Settings />} />
+                    <Route path="business" element={<BusinessDashboard />} />
+                    <Route path="business/expenses" element={<BusinessExpenses />} />
+                    <Route path="business/sales" element={<BusinessSales />} />
+                    <Route path="business/products" element={<BusinessProducts />} />
+                    <Route path="business/pricing" element={<BusinessPricing />} />
+                    <Route path="business/dre" element={<BusinessDRE />} />
+                    <Route path="business/accounts" element={<BusinessAccounts />} />
+                  </Route>
+                  <Route path="*" element={<Navigate to="/404" replace />} />
+                  <Route path="/404" element={<NotFound />} />
+                </Routes>
+              </BrowserRouter>
+            </TooltipProvider>
+          </AppModeProvider>
+        </AuthProvider>
+      </ThemeProvider>
+    </QueryClientProvider>
+  );
+};
 
 export default App;
