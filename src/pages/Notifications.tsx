@@ -77,7 +77,9 @@ export default function Notifications() {
 
   const getStatusBadge = (status: string, scheduledDate: Date) => {
     if (status === 'cancelled') return <Badge variant="destructive">Cancelado</Badge>;
-    if (status === 'sent' || new Date() > scheduledDate) return <Badge variant="secondary">Enviado</Badge>;
+    if (status === 'failed') return <Badge variant="destructive">Falha</Badge>;
+    if (status === 'sent') return <Badge variant="secondary">Enviado</Badge>;
+    if (new Date() > scheduledDate) return <Badge className="bg-orange-500 hover:bg-orange-600 text-white">Processando</Badge>;
     return <Badge className="bg-blue-500 hover:bg-blue-600">Pendente</Badge>;
   };
 
@@ -129,7 +131,7 @@ export default function Notifications() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {notifications.map((n) => {
             const scheduledDate = new Date(n.scheduled_for);
-            const isPending = n.status === 'pending' && new Date() < scheduledDate;
+            const isPending = n.status === 'pending';
 
             return (
               <Card key={n.id} className="overflow-hidden transition-all hover:shadow-md border border-border/50">
