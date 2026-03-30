@@ -38,37 +38,19 @@ export const useNotifications = () => {
     mutationFn: async (newNotif: { titulo: string, descricao: string, data_hora: string }) => {
       if (!user) throw new Error("Usuário não autenticado");
 
-      try {
-        const { data, error } = await supabase.functions.invoke('create-notification', {
-          body: newNotif
-        });
+      const { data, error } = await supabase.functions.invoke('create-notification', {
+        body: newNotif
+      });
 
-        if (error) throw error;
-        return { ...data, type: 'push' };
-      } catch (err) {
-        console.warn("Edge Function failed, falling back to direct DB insert", err);
-        // Fallback: insert directly to DB (no OneSignal scheduling)
-        const { data, error } = await (supabase
-          .from('notifications' as any)
-          .insert([{
-            ...newNotif,
-            user_id: user.id,
-            status: 'pendente'
-          }])
-          .select()
-          .single() as any);
-
-        if (error) throw error;
-        return { ...data, type: 'local' };
+      if (error) {
+        console.error("Push Error:", error);
+        throw new Error(error.message || "Erro ao agendar notificação");
       }
+      return data;
     },
-    onSuccess: (result) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
-      if (result.type === 'push') {
-        toast.success("Notificação agendada no OneSignal!");
-      } else {
-        toast.warning("Lembrete salvo, mas o agendamento Push falhou. Verifique as chaves do OneSignal.");
-      }
+      toast.success("Notificação agendada com sucesso!");
     },
     onError: (err: any) => {
       toast.error("Erro ao agendar: " + err.message);
@@ -79,38 +61,19 @@ export const useNotifications = () => {
     mutationFn: async (notif: { id: string, titulo: string, descricao: string, data_hora: string }) => {
       if (!user) throw new Error("Usuário não autenticado");
 
-      try {
-        const { data, error } = await supabase.functions.invoke('create-notification', {
-          body: { ...notif, isUpdate: true }
-        });
+      const { data, error } = await supabase.functions.invoke('create-notification', {
+        body: { ...notif, isUpdate: true }
+      });
 
-        if (error) throw error;
-        return { ...data, type: 'push' };
-      } catch (err) {
-        console.warn("Edge Function update failed, falling back to direct DB update", err);
-        const { data, error } = await (supabase
-          .from('notifications' as any)
-          .update({
-            titulo: notif.titulo,
-            descricao: notif.descricao,
-            data_hora: notif.data_hora,
-            status: 'pendente'
-          } as any)
-          .eq('id' as any, notif.id)
-          .select()
-          .single() as any);
-
-        if (error) throw error;
-        return { ...data, type: 'local' };
+      if (error) {
+        console.error("Push Update Error:", error);
+        throw new Error(error.message || "Erro ao atualizar notificação");
       }
+      return data;
     },
-    onSuccess: (result) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
-      if (result.type === 'push') {
-        toast.success("Notificação atualizada no OneSignal!");
-      } else {
-        toast.warning("Alteração salva localmente, mas Push falhou.");
-      }
+      toast.success("Notificação atualizada com sucesso!");
     },
     onError: (err: any) => {
       toast.error("Erro ao atualizar: " + err.message);
