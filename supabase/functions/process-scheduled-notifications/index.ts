@@ -70,6 +70,14 @@ serve(async (req) => {
         data: { url: '/notifications' }
       })
 
+      let hasError = false;
+      let lastErrorMessage = "";
+
+      if (userSubs.length === 0) {
+        hasError = true;
+        lastErrorMessage = "Nenhum dispositivo encontrado (push_subscriptions vazio para este usuário). O usuário não permitiu notificações ou limpou os dados.";
+      }
+
       // Enviar os pushes para cada dispositivo cadastrado do usuário
       for (const sub of userSubs) {
         const pushSubscription = {
@@ -80,20 +88,33 @@ serve(async (req) => {
           }
         }
 
-        promises.push(
-          webPush.sendNotification(pushSubscription, payload)
-            .catch(err => {
-              console.error(`Erro ao enviar push para endpoint ${sub.endpoint}:`, err)
-              // Se retornar erro 410 Gone, a inscrição expirou/foi revogada no navegador, 
-              // poderíamos deletá-la da tabela push_subscriptions, mas logaremos por enquanto.
-            })
-        )
+        try {
+          await webPush.sendNotification(pushSubscription, payload);
+        } catch (err) {
+          hasError = true;
+          lastErrorMessage = err.message || JSON.stringify(err);
+          console.error(`Erro ao enviar push para endpoint ${sub.endpoint}:`, err);
+        }
       }
 
-      // Marcar alerta como enviado
-      promises.push(
-        supabaseClient.from('notifications').update({ status: 'sent', updated_at: new Date().toISOString() }).eq('id', notification.id)
-      )
+      if (hasError) {
+        // Falha no envio => Atualizar para failed e gravar o erro
+        promises.push(
+          supabaseClient.from('notifications').update({ 
+            status: 'failed', 
+            description: notification.description + '\n\n[FALHA NO PUSH]: ' + lastErrorMessage,
+            updated_at: new Date().toISOString() 
+          }).eq('id', notification.id)
+        );
+      } else {
+        // Sucesso
+        promises.push(
+          supabaseClient.from('notifications').update({ 
+            status: 'sent', 
+            updated_at: new Date().toISOString() 
+          }).eq('id', notification.id)
+        );
+      }
     }
 
     await Promise.all(promises)
