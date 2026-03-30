@@ -11,6 +11,8 @@ import { useNotifications, Notification } from '@/hooks/useNotifications';
 import { formatDate } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import OneSignal from 'react-onesignal';
+import { toast } from 'sonner';
 
 const Notifications = () => {
   const { notifications, isLoading, createNotification, updateNotification, deleteNotification } = useNotifications();
@@ -64,6 +66,21 @@ const Notifications = () => {
     setForm({ titulo: '', descricao: '', data: '', hora: '' });
     setEditingNotif(null);
     setOpen(false);
+  };
+
+  const handlePermission = async () => {
+    try {
+      // @ts-ignore - Some versions uses different prompt methods
+      if ((OneSignal as any).showSlidedownPrompt) {
+        await (OneSignal as any).showSlidedownPrompt();
+      } else {
+        await (OneSignal as any).Slidedown.show();
+      }
+      toast.info("Solicitando permissão para notificações...");
+    } catch (err) {
+      console.error(err);
+      toast.error("Erro ao solicitar permissão.");
+    }
   };
 
   const filteredNotifications = notifications.filter(n => 
@@ -239,14 +256,19 @@ const Notifications = () => {
       </div>
 
       <Card className="bg-primary/5 border-primary/20">
-        <CardContent className="p-4 flex gap-4 items-start">
-          <AlertCircle className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-          <div className="text-sm">
-            <p className="font-semibold text-primary">Sobre as Notificações</p>
-            <p className="text-primary/80">
-              Para receber as notificações, certifique-se de que permitiu as notificações no seu navegador e que o sistema está instalado como PWA no seu dispositivo.
-            </p>
+        <CardContent className="p-4 flex gap-4 items-center justify-between">
+          <div className="flex gap-4 items-start">
+            <AlertCircle className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+            <div className="text-sm">
+              <p className="font-semibold text-primary">Sobre as Notificações</p>
+              <p className="text-primary/80">
+                Certifique-se de permitir as notificações no seu navegador para receber os avisos.
+              </p>
+            </div>
           </div>
+          <Button variant="outline" size="sm" onClick={handlePermission} className="border-primary/20 hover:bg-primary/10">
+            Habilitar No Navegador
+          </Button>
         </CardContent>
       </Card>
     </div>
