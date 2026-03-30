@@ -71,6 +71,44 @@ export const useNotifications = () => {
     }
   });
 
+  const updateNotification = useMutation({
+    mutationFn: async (notif: { id: string, titulo: string, descricao: string, data_hora: string }) => {
+      if (!user) throw new Error("Usuário não autenticado");
+
+      try {
+        const { data, error } = await supabase.functions.invoke('create-notification', {
+          body: { ...notif, isUpdate: true } // I'll update the Edge Function to handle this
+        });
+
+        if (error) throw error;
+        return data;
+      } catch (err) {
+        console.warn("Edge Function update failed, falling back to direct DB update", err);
+        const { data, error } = await supabase
+          .from('notifications')
+          .update({
+            titulo: notif.titulo,
+            descricao: notif.descricao,
+            data_hora: notif.data_hora,
+            status: 'pendente'
+          })
+          .eq('id', notif.id)
+          .select()
+          .single();
+
+        if (error) throw error;
+        return data;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      toast.success("Notificação atualizada!");
+    },
+    onError: (err: any) => {
+      toast.error("Erro ao atualizar: " + err.message);
+    }
+  });
+
   const deleteNotification = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase
@@ -92,6 +130,7 @@ export const useNotifications = () => {
     notifications,
     isLoading,
     createNotification,
+    updateNotification,
     deleteNotification
   };
 };

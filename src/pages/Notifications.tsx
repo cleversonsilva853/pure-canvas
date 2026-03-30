@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Bell, Plus, Trash2, Calendar, Clock, AlertCircle } from 'lucide-react';
+import { Bell, Plus, Trash2, Calendar, Clock, AlertCircle, Pencil } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,7 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const Notifications = () => {
-  const { notifications, isLoading, createNotification, deleteNotification } = useNotifications();
+  const { notifications, isLoading, createNotification, updateNotification, deleteNotification } = useNotifications();
   const [open, setOpen] = useState(false);
   const [editingNotif, setEditingNotif] = useState<Notification | null>(null);
   const [filter, setFilter] = useState<'todos' | 'pendente' | 'enviado'>('todos');
@@ -42,14 +42,12 @@ const Notifications = () => {
     const data_hora = `${form.data}T${form.hora}:00`;
     
     if (editingNotif) {
-      // No mundo real, teríamos um mutation de update que também atualiza no OneSignal
-      // Para este MVP, vamos excluir e criar uma nova ou apenas informar que é um agendamento novo
-      await createNotification.mutateAsync({
+      await updateNotification.mutateAsync({
+        id: editingNotif.id,
         titulo: form.titulo,
         descricao: form.descricao,
         data_hora
       });
-      await deleteNotification.mutateAsync(editingNotif.id);
     } else {
       await createNotification.mutateAsync({
         titulo: form.titulo,
@@ -92,7 +90,7 @@ const Notifications = () => {
           </DialogTrigger>
           <DialogContent className="max-w-md">
             <DialogHeader>
-              <DialogTitle>Criar Lembrete</DialogTitle>
+              <DialogTitle>{editingNotif ? 'Editar Lembrete' : 'Criar Lembrete'}</DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
@@ -200,7 +198,7 @@ const Notifications = () => {
                       <div className="flex items-center gap-4 pt-1">
                         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                           <Calendar className="h-3 w-3" />
-                          {notif.data_hora.split('T')[0]}
+                          {formatDate(notif.data_hora.split('T')[0])}
                         </div>
                         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                           <Clock className="h-3 w-3" />
@@ -217,7 +215,7 @@ const Notifications = () => {
                       onClick={() => handleEdit(notif)}
                       disabled={notif.status !== 'pendente'}
                     >
-                      <Plus className="h-4 w-4 rotate-45" /> {/* Use a better icon? or just keep it simple */}
+                      <Pencil className="h-4 w-4" />
                     </Button>
                     <Button
                       variant="ghost"

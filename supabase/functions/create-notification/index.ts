@@ -25,50 +25,91 @@ serve(async (req) => {
       return new Response(JSON.stringify({ error: "Não autorizado" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    const { titulo, descricao, data_hora } = await req.json();
+    const { titulo, descricao, data_hora, isUpdate, id } = await req.json();
 
-    // 1. Agendar no OneSignal
-    const onesignalResponse = await fetch("https://onesignal.com/api/v1/notifications", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json; charset=utf-8",
-        "Authorization": `Basic ${ONESIGNAL_REST_API_KEY}`,
-      },
-      body: JSON.stringify({
-        app_id: ONESIGNAL_APP_ID,
-        include_external_user_ids: [user.id],
-        contents: { en: titulo, pt: titulo },
-        headings: { en: titulo, pt: titulo },
-        subtitle: { en: descricao, pt: descricao },
-        send_after: data_hora, // ISO string
-      }),
-    });
+    let onesignalId = null;
 
-    const onesignalData = await onesignalResponse.json();
+    // 1. Agendar ou Atualizar no OneSignal
+    if (isUpdate && id) {
+      // Buscar o onesignal_id atual da notificação para atualizar no OneSignal
+      const { data: existing } = await supabase
+        .from("notifications")
+        .select("onesignal_id")
+        .eq("id", id)
+        .single();
+      
+      if (existing?.onesignal_id) {
+          await fetch(`https://onesignal.com/api/v1/notifications/${existing.onesignal_id}`, {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json; charset=utf-8",
+              "Authorization": `Basic ${ONESIGNAL_REST_API_KEY}`,
+            },
+            body: JSON.stringify({
+              app_id: ONESIGNAL_APP_ID,
+              contents: { en: titulo, pt: titulo },
+              headings: { en: titulo, pt: titulo },
+              subtitle: { en: descricao, pt: descricao },
+              send_after: data_hora,
+            }),
+          });
+          onesignalId = existing.onesignal_id;
+      }
+    } else {
+      const onesignalResponse = await fetch("https://onesignal.com/api/v1/notifications", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json; charset=utf-8",
+          "Authorization": `Basic ${ONESIGNAL_REST_API_KEY}`,
+        },
+        body: JSON.stringify({
+          app_id: ONESIGNAL_APP_ID,
+          include_external_user_ids: [user.id],
+          contents: { en: titulo, pt: titulo },
+          headings: { en: titulo, pt: titulo },
+          subtitle: { en: descricao, pt: descricao },
+          send_after: data_hora,
+        }),
+      });
 
-    if (!onesignalResponse.ok) {
-        throw new Error(onesignalData.errors?.[0] || "Erro ao agendar no OneSignal");
+      const onesignalData = await onesignalResponse.json();
+      if (!onesignalResponse.ok) {
+          throw new Error(onesignalData.errors?.[0] || "Erro ao agendar no OneSignal");
+      }
+      onesignalId = onesignalData.id;
     }
 
-    // 2. Salvar no Banco de Dados
-    const { data: notification, error: dbError } = await supabase
-      .from("notifications")
-      .insert([
-        {
-          user_id: user.id,
-          titulo,
-          descricao,
-          data_hora,
-          status: "pendente",
-          onesignal_id: onesignalData.id,
-        },
-      ])
-      .select()
-      .single();
+    // 2. Salvar ou Atualizar no Banco de Dados
+    let result;
+    if (isUpdate && id) {
+      const { data, error: dbError } = await supabase
+        .from("notifications")
+        .update({ titulo, descricao, data_hora, status: "pendente" })
+        .eq("id", id)
+        .select()
+        .single();
+      if (dbError) throw dbError;
+      result = data;
+    } else {
+      const { data, error: dbError } = await supabase
+        .from("notifications")
+        .insert([
+          {
+            user_id: user.id,
+            titulo,
+            descricao,
+            data_hora,
+            status: "pendente",
+            onesignal_id: onesignalId,
+          },
+        ])
+        .select()
+        .single();
+      if (dbError) throw dbError;
+      result = data;
+    }
 
-    if (dbError) throw dbError;
-
-    return new Response(JSON.stringify(notification), {
+    return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });
