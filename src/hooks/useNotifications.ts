@@ -38,12 +38,29 @@ export const useNotifications = () => {
     mutationFn: async (newNotif: { titulo: string, descricao: string, data_hora: string }) => {
       if (!user) throw new Error("Usuário não autenticado");
 
-      const { data, error } = await supabase.functions.invoke('create-notification', {
-        body: newNotif
-      });
+      try {
+        const { data, error } = await supabase.functions.invoke('create-notification', {
+          body: newNotif
+        });
 
-      if (error) throw error;
-      return data;
+        if (error) throw error;
+        return data;
+      } catch (err) {
+        console.warn("Edge Function failed, falling back to direct DB insert", err);
+        // Fallback: insert directly to DB (no OneSignal scheduling)
+        const { data, error } = await supabase
+          .from('notifications')
+          .insert([{
+            ...newNotif,
+            user_id: user.id,
+            status: 'pendente'
+          }])
+          .select()
+          .single();
+
+        if (error) throw error;
+        return data;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
