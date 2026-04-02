@@ -53,6 +53,24 @@ export type Database = {
         }
         Relationships: []
       }
+      Atualização_Automatica: {
+        Row: {
+          created_at: string
+          id: number
+          update_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+          update_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          update_at?: string | null
+        }
+        Relationships: []
+      }
       budgets: {
         Row: {
           amount: number
@@ -112,7 +130,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           name: string
-          type?: string
+          type: string
           updated_at?: string
           user_id: string
         }
@@ -125,6 +143,30 @@ export type Database = {
           is_active?: boolean
           name?: string
           type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      business_expense_categories: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
           updated_at?: string
           user_id?: string
         }
@@ -536,6 +578,42 @@ export type Database = {
         }
         Relationships: []
       }
+      notifications: {
+        Row: {
+          created_at: string
+          description: string
+          id: string
+          recurrence: string
+          scheduled_for: string
+          status: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          id?: string
+          recurrence?: string
+          scheduled_for: string
+          status?: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          id?: string
+          recurrence?: string
+          scheduled_for?: string
+          status?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -559,6 +637,33 @@ export type Database = {
           full_name?: string | null
           id?: string
           updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      push_subscriptions: {
+        Row: {
+          auth: string
+          created_at: string
+          endpoint: string
+          id: string
+          p256dh: string
+          user_id: string
+        }
+        Insert: {
+          auth: string
+          created_at?: string
+          endpoint: string
+          id?: string
+          p256dh: string
+          user_id: string
+        }
+        Update: {
+          auth?: string
+          created_at?: string
+          endpoint?: string
+          id?: string
+          p256dh?: string
           user_id?: string
         }
         Relationships: []
@@ -673,6 +778,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_are_in_same_couple: {
+        Args: { _u1: string; _u2: string }
+        Returns: boolean
+      }
+      check_is_couple_member: {
+        Args: { _couple_id: string; _user_id: string }
+        Returns: boolean
+      }
       get_business_owner_id: { Args: { _user_id: string }; Returns: string }
       is_business_member: {
         Args: { _member_id: string; _owner_id: string }
@@ -680,7 +793,7 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      notification_status: "pendente" | "enviado" | "cancelado"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -807,6 +920,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      notification_status: ["pendente", "enviado", "cancelado"],
+    },
   },
 } as const
