@@ -384,25 +384,3 @@ export const useDeleteBusinessExpenseCategory = () => {
     onError: () => toast({ title: 'Erro ao remover categoria', variant: 'destructive' }),
   });
 };
-  const qc = useQueryClient();
-  const { toast } = useToast();
-
-  return useMutation({
-    mutationFn: async ({ productId, compositions }: { productId: string; compositions: { ingredient_id: string; quantity: number }[] }) => {
-      const { error: deleteError } = await supabase.from('business_product_compositions').delete().eq('product_id', productId);
-      if (deleteError) throw deleteError;
-
-      if (compositions.length > 0) {
-        const { error: insertError } = await supabase.from('business_product_compositions').insert(
-          compositions.map(c => ({ ...c, product_id: productId }))
-        );
-        if (insertError) throw insertError;
-      }
-    },
-    onSuccess: (_, { productId }) => {
-      qc.invalidateQueries({ queryKey: ['business_product_compositions', productId] });
-      toast({ title: 'Ficha técnica atualizada!' });
-    },
-    onError: () => toast({ title: 'Erro ao atualizar ficha técnica', variant: 'destructive' }),
-  });
-};
