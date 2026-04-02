@@ -17,7 +17,7 @@ import { formatDate, getTodayInputDate } from '@/lib/utils';
 
 const fmt = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
 
-const DEFAULT_CATEGORIES = ['Ingredientes', 'Aluguel', 'Funcionários', 'Energia', 'Água', 'Embalagens', 'Marketing', 'Manutenção', 'Outros'];
+
 
 const BusinessExpenses = () => {
   const { data: expenses = [], isLoading } = useBusinessExpenses();
@@ -40,9 +40,7 @@ const BusinessExpenses = () => {
   const today = getTodayInputDate();
 
   const allCategories = useMemo(() => {
-    const custom = customCategories.map(c => c.name);
-    const merged = [...DEFAULT_CATEGORIES, ...custom.filter(n => !DEFAULT_CATEGORIES.includes(n))];
-    return merged;
+    return customCategories.map(c => c.name);
   }, [customCategories]);
 
   const filteredExpenses = useMemo(() => {
@@ -163,14 +161,6 @@ const BusinessExpenses = () => {
                   </div>
                 )}
 
-                <div>
-                  <p className="text-xs text-muted-foreground mb-1">Categorias padrão:</p>
-                  <div className="flex flex-wrap gap-1">
-                    {DEFAULT_CATEGORIES.map(c => (
-                      <span key={c} className="text-xs bg-muted px-2 py-0.5 rounded">{c}</span>
-                    ))}
-                  </div>
-                </div>
               </div>
             </DialogContent>
           </Dialog>
