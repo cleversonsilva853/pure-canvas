@@ -17,7 +17,7 @@ import { formatDate, getTodayInputDate } from '@/lib/utils';
 
 const fmt = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
 
-const DEFAULT_CATEGORIES = ['Ingredientes', 'Aluguel', 'Funcionários', 'Energia', 'Água', 'Embalagens', 'Marketing', 'Manutenção', 'Outros'];
+
 
 const BusinessExpenses = () => {
   const { data: expenses = [], isLoading } = useBusinessExpenses();
