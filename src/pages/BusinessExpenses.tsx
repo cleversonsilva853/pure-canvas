@@ -40,9 +40,7 @@ const BusinessExpenses = () => {
   const today = getTodayInputDate();
 
   const allCategories = useMemo(() => {
-    const custom = customCategories.map(c => c.name);
-    const merged = [...DEFAULT_CATEGORIES, ...custom.filter(n => !DEFAULT_CATEGORIES.includes(n))];
-    return merged;
+    return customCategories.map(c => c.name);
   }, [customCategories]);
 
   const filteredExpenses = useMemo(() => {
