@@ -1,27 +1,14 @@
 import { useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useBusinessExpenses, useBusinessSales, useBusinessAccounts } from '@/hooks/useBusinessData';
 import { DollarSign, TrendingDown, TrendingUp, Percent, Wallet } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { getTodayInputDate } from '@/lib/utils';
 
-const businessSections = [
-  { label: 'Painel Empresa', value: '/business' },
-  { label: 'Despesas', value: '/business/expenses' },
-  { label: 'Vendas', value: '/business/sales' },
-  { label: 'Produtos', value: '/business/products' },
-  { label: 'Precificação', value: '/business/pricing' },
-  { label: 'DRE', value: '/business/dre' },
-  { label: 'Contas', value: '/business/accounts' },
-];
-
 const fmt = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
 
 const BusinessDashboard = () => {
-  const navigate = useNavigate();
   const { data: expenses = [] } = useBusinessExpenses();
   const { data: sales = [] } = useBusinessSales();
   const { data: accounts = [] } = useBusinessAccounts();
@@ -84,23 +71,7 @@ const BusinessDashboard = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <h1 className="text-2xl font-bold">Financeiro Empresa</h1>
-        <div className="w-full sm:w-56">
-          <Select defaultValue="/business" onValueChange={(val) => navigate(val)}>
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Ir para..." />
-            </SelectTrigger>
-            <SelectContent>
-              {businessSections.map((s) => (
-                <SelectItem key={s.value} value={s.value}>
-                  {s.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
+      <h1 className="text-2xl font-bold">Financeiro Empresa</h1>
 
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
         {cards.map((c, i) => (
