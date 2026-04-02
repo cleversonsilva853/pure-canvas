@@ -161,14 +161,6 @@ const BusinessExpenses = () => {
                   </div>
                 )}
 
-                <div>
-                  <p className="text-xs text-muted-foreground mb-1">Categorias padrão:</p>
-                  <div className="flex flex-wrap gap-1">
-                    {DEFAULT_CATEGORIES.map(c => (
-                      <span key={c} className="text-xs bg-muted px-2 py-0.5 rounded">{c}</span>
-                    ))}
-                  </div>
-                </div>
               </div>
             </DialogContent>
           </Dialog>
