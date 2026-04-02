@@ -311,3 +311,76 @@ export const useUpdateProductComposition = () => {
     onError: () => toast({ title: 'Erro ao atualizar ficha técnica', variant: 'destructive' }),
   });
 };
+
+// ---- Business Expense Categories ----
+export const useBusinessExpenseCategories = () => {
+  const { user } = useAuth();
+  const ownerId = useBusinessOwnerId();
+
+  return useQuery({
+    queryKey: ['business_expense_categories', ownerId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('business_expense_categories')
+        .select('*')
+        .eq('user_id', ownerId!)
+        .order('name', { ascending: true });
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user && !!ownerId,
+  });
+};
+
+export const useCreateBusinessExpenseCategory = () => {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  const ownerId = useBusinessOwnerId();
+
+  return useMutation({
+    mutationFn: async (values: { name: string }) => {
+      const { error } = await supabase.from('business_expense_categories').insert({ ...values, user_id: ownerId! });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['business_expense_categories'] });
+      toast({ title: 'Categoria criada!' });
+    },
+    onError: () => toast({ title: 'Erro ao criar categoria', variant: 'destructive' }),
+  });
+};
+
+export const useUpdateBusinessExpenseCategory = () => {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (values: { id: string; name: string }) => {
+      const { id, ...updateValues } = values;
+      const { error } = await supabase.from('business_expense_categories').update(updateValues).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['business_expense_categories'] });
+      toast({ title: 'Categoria atualizada!' });
+    },
+    onError: () => toast({ title: 'Erro ao atualizar categoria', variant: 'destructive' }),
+  });
+};
+
+export const useDeleteBusinessExpenseCategory = () => {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('business_expense_categories').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['business_expense_categories'] });
+      toast({ title: 'Categoria removida!' });
+    },
+    onError: () => toast({ title: 'Erro ao remover categoria', variant: 'destructive' }),
+  });
+};

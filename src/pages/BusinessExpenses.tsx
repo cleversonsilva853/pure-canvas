@@ -8,8 +8,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { useBusinessExpenses, useCreateBusinessExpense, useDeleteBusinessExpense } from '@/hooks/useBusinessData';
-import { Plus, Trash2, Search, Filter, Download, FileText, FileSpreadsheet } from 'lucide-react';
+import { useBusinessExpenses, useCreateBusinessExpense, useDeleteBusinessExpense, useBusinessExpenseCategories, useCreateBusinessExpenseCategory, useUpdateBusinessExpenseCategory, useDeleteBusinessExpenseCategory } from '@/hooks/useBusinessData';
+import { Plus, Trash2, Search, Filter, Download, FileText, FileSpreadsheet, Pencil, Tag } from 'lucide-react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
@@ -17,21 +17,33 @@ import { formatDate, getTodayInputDate } from '@/lib/utils';
 
 const fmt = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
 
-const CATEGORIES = ['Ingredientes', 'Aluguel', 'Funcionários', 'Energia', 'Água', 'Embalagens', 'Marketing', 'Manutenção', 'Outros'];
-
-
+const DEFAULT_CATEGORIES = ['Ingredientes', 'Aluguel', 'Funcionários', 'Energia', 'Água', 'Embalagens', 'Marketing', 'Manutenção', 'Outros'];
 
 const BusinessExpenses = () => {
   const { data: expenses = [], isLoading } = useBusinessExpenses();
   const createExpense = useCreateBusinessExpense();
   const deleteExpense = useDeleteBusinessExpense();
+  const { data: customCategories = [] } = useBusinessExpenseCategories();
+  const createCategory = useCreateBusinessExpenseCategory();
+  const updateCategory = useUpdateBusinessExpenseCategory();
+  const deleteCategory = useDeleteBusinessExpenseCategory();
+
   const [open, setOpen] = useState(false);
+  const [catOpen, setCatOpen] = useState(false);
   const [form, setForm] = useState({ name: '', category: 'Outros', amount: '', date: getTodayInputDate(), observation: '' });
   const [searchTerm, setSearchTerm] = useState('');
   const [filterMonth, setFilterMonth] = useState<string>(String(new Date().getMonth()));
   const [filterYear, setFilterYear] = useState<string>(String(new Date().getFullYear()));
+  const [newCatName, setNewCatName] = useState('');
+  const [editingCat, setEditingCat] = useState<{ id: string; name: string } | null>(null);
 
   const today = getTodayInputDate();
+
+  const allCategories = useMemo(() => {
+    const custom = customCategories.map(c => c.name);
+    const merged = [...DEFAULT_CATEGORIES, ...custom.filter(n => !DEFAULT_CATEGORIES.includes(n))];
+    return merged;
+  }, [customCategories]);
 
   const filteredExpenses = useMemo(() => {
     return expenses.filter(e => {
@@ -54,36 +66,37 @@ const BusinessExpenses = () => {
     setOpen(false);
   };
 
+  const handleAddCategory = async () => {
+    if (!newCatName.trim()) return;
+    await createCategory.mutateAsync({ name: newCatName.trim() });
+    setNewCatName('');
+  };
+
+  const handleUpdateCategory = async () => {
+    if (!editingCat || !editingCat.name.trim()) return;
+    await updateCategory.mutateAsync({ id: editingCat.id, name: editingCat.name.trim() });
+    setEditingCat(null);
+  };
+
   const handleExportPDF = () => {
     const doc = new jsPDF();
     doc.text('Relatório de Despesas', 14, 15);
-    
     const tableData = filteredExpenses.map(e => [
-      e.name,
-      e.category,
-      fmt(Number(e.amount)),
-      formatDate(e.date),
-      e.observation || ''
+      e.name, e.category, fmt(Number(e.amount)), formatDate(e.date), e.observation || ''
     ]);
-
     autoTable(doc, {
       head: [['Nome', 'Categoria', 'Valor', 'Data', 'Observação']],
       body: tableData,
       startY: 20,
     });
-
     doc.save('despesas.pdf');
   };
 
   const handleExportExcel = () => {
     const dataToExport = filteredExpenses.map(e => ({
-      'Nome': e.name,
-      'Categoria': e.category,
-      'Valor': Number(e.amount),
-      'Data': formatDate(e.date),
-      'Observação': e.observation || ''
+      'Nome': e.name, 'Categoria': e.category, 'Valor': Number(e.amount),
+      'Data': formatDate(e.date), 'Observação': e.observation || ''
     }));
-
     const ws = XLSX.utils.json_to_sheet(dataToExport);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Despesas");
@@ -95,6 +108,73 @@ const BusinessExpenses = () => {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Despesas Empresa</h1>
         <div className="flex items-center gap-2">
+          <Dialog open={catOpen} onOpenChange={setCatOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="gap-2">
+                <Tag className="h-4 w-4" />
+                <span className="hidden sm:inline">Categorias</span>
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader><DialogTitle>Gerenciar Categorias</DialogTitle></DialogHeader>
+              <div className="space-y-4">
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Nome da categoria..."
+                    value={newCatName}
+                    onChange={e => setNewCatName(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && handleAddCategory()}
+                  />
+                  <Button onClick={handleAddCategory} disabled={createCategory.isPending || !newCatName.trim()}>
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+
+                {customCategories.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">Nenhuma categoria personalizada criada.</p>
+                ) : (
+                  <div className="space-y-2 max-h-60 overflow-y-auto">
+                    {customCategories.map(cat => (
+                      <div key={cat.id} className="flex items-center gap-2">
+                        {editingCat?.id === cat.id ? (
+                          <>
+                            <Input
+                              value={editingCat.name}
+                              onChange={e => setEditingCat({ ...editingCat, name: e.target.value })}
+                              onKeyDown={e => e.key === 'Enter' && handleUpdateCategory()}
+                              className="flex-1"
+                            />
+                            <Button size="sm" onClick={handleUpdateCategory} disabled={updateCategory.isPending}>Salvar</Button>
+                            <Button size="sm" variant="ghost" onClick={() => setEditingCat(null)}>Cancelar</Button>
+                          </>
+                        ) : (
+                          <>
+                            <span className="flex-1 text-sm">{cat.name}</span>
+                            <Button size="icon" variant="ghost" onClick={() => setEditingCat({ id: cat.id, name: cat.name })}>
+                              <Pencil className="h-3.5 w-3.5" />
+                            </Button>
+                            <Button size="icon" variant="ghost" onClick={() => deleteCategory.mutate(cat.id)}>
+                              <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">Categorias padrão:</p>
+                  <div className="flex flex-wrap gap-1">
+                    {DEFAULT_CATEGORIES.map(c => (
+                      <span key={c} className="text-xs bg-muted px-2 py-0.5 rounded">{c}</span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" className="gap-2">
@@ -115,22 +195,22 @@ const BusinessExpenses = () => {
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-2" />Nova Despesa</Button></DialogTrigger>
             <DialogContent>
-            <DialogHeader><DialogTitle>Cadastrar Despesa</DialogTitle></DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div><Label>Nome</Label><Input required value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} /></div>
-              <div><Label>Categoria</Label>
-                <Select value={form.category} onValueChange={v => setForm(f => ({ ...f, category: v }))}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>{CATEGORIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
-                </Select>
-              </div>
-              <div><Label>Valor (R$)</Label><Input required type="number" step="0.01" min="0" value={form.amount} onChange={e => setForm(f => ({ ...f, amount: e.target.value }))} /></div>
-              <div><Label>Data</Label><Input required type="date" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} /></div>
-              <div><Label>Observação</Label><Textarea value={form.observation} onChange={e => setForm(f => ({ ...f, observation: e.target.value }))} /></div>
-              <Button type="submit" className="w-full" disabled={createExpense.isPending}>Salvar</Button>
-            </form>
-          </DialogContent>
-        </Dialog>
+              <DialogHeader><DialogTitle>Cadastrar Despesa</DialogTitle></DialogHeader>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div><Label>Nome</Label><Input required value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} /></div>
+                <div><Label>Categoria</Label>
+                  <Select value={form.category} onValueChange={v => setForm(f => ({ ...f, category: v }))}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>{allCategories.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                  </Select>
+                </div>
+                <div><Label>Valor (R$)</Label><Input required type="number" step="0.01" min="0" value={form.amount} onChange={e => setForm(f => ({ ...f, amount: e.target.value }))} /></div>
+                <div><Label>Data</Label><Input required type="date" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} /></div>
+                <div><Label>Observação</Label><Textarea value={form.observation} onChange={e => setForm(f => ({ ...f, observation: e.target.value }))} /></div>
+                <Button type="submit" className="w-full" disabled={createExpense.isPending}>Salvar</Button>
+              </form>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
 
