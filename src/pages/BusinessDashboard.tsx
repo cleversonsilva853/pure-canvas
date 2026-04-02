@@ -1,14 +1,17 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useBusinessExpenses, useBusinessSales, useBusinessAccounts } from '@/hooks/useBusinessData';
-import { DollarSign, TrendingDown, TrendingUp, Percent, Wallet } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { DollarSign, TrendingDown, TrendingUp, Percent, Wallet, Calendar } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { getTodayInputDate } from '@/lib/utils';
+import { subDays, isAfter, parseISO, startOfMonth, startOfToday } from 'date-fns';
 
 const fmt = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
 
 const BusinessDashboard = () => {
+  const [activePeriod, setActivePeriod] = useState<'day' | 'week' | 'month'>('month');
   const { data: expenses = [] } = useBusinessExpenses();
   const { data: sales = [] } = useBusinessSales();
   const { data: accounts = [] } = useBusinessAccounts();
@@ -18,27 +21,62 @@ const BusinessDashboard = () => {
   const currentYear = new Date().getFullYear();
 
   const stats = useMemo(() => {
-    const totalExpenses = expenses.reduce((s, e) => s + Number(e.amount), 0);
-    const totalSales = sales.reduce((s, e) => s + Number(e.total_price), 0);
+    const todayDate = startOfToday();
+    const sevenDaysAgo = subDays(todayDate, 7);
+    const firstOfMonth = startOfMonth(todayDate);
+
+    const filterFn = (dateStr: string) => {
+      const itemDate = parseISO(dateStr);
+      if (activePeriod === 'day') return dateStr === today;
+      if (activePeriod === 'week') return isAfter(itemDate, sevenDaysAgo);
+      if (activePeriod === 'month') {
+        const [y, m] = dateStr.split('-').map(Number);
+        return (m - 1) === currentMonth && y === currentYear;
+      }
+      return true;
+    };
+
+    const filteredExpenses = expenses.filter(e => filterFn(e.date));
+    const filteredSales = sales.filter(s => filterFn(s.date));
+
+    const periodExpenses = filteredExpenses.reduce((s, e) => s + Number(e.amount), 0);
+    const periodSales = filteredSales.reduce((s, e) => s + Number(e.total_price), 0);
     const totalBalance = accounts.reduce((s, a) => s + Number(a.balance), 0);
+    
     const dailyExpenses = expenses.filter(e => e.date === today).reduce((s, e) => s + Number(e.amount), 0);
     const dailySales = sales.filter(e => e.date === today).reduce((s, e) => s + Number(e.total_price), 0);
+    
     const monthlyExpenses = expenses.filter(e => { 
       const [y, m] = e.date.split('-').map(Number);
       return (m - 1) === currentMonth && y === currentYear; 
     }).reduce((s, e) => s + Number(e.amount), 0);
+    
     const monthlySales = sales.filter(e => { 
       const [y, m] = e.date.split('-').map(Number);
       return (m - 1) === currentMonth && y === currentYear; 
     }).reduce((s, e) => s + Number(e.total_price), 0);
 
-    const totalProfit = totalSales - totalExpenses;
+    const periodProfit = periodSales - periodExpenses;
     const dailyProfit = dailySales - dailyExpenses;
     const monthlyProfit = monthlySales - monthlyExpenses;
-    const margin = totalSales > 0 ? (totalProfit / totalSales) * 100 : 0;
+    const totalProfit = sales.reduce((s, e) => s + Number(e.total_price), 0) - expenses.reduce((s, e) => s + Number(e.amount), 0);
+    const margin = periodSales > 0 ? (periodProfit / periodSales) * 100 : 0;
 
-    return { totalExpenses, totalSales, totalBalance, dailyExpenses, dailySales, monthlyExpenses, monthlySales, totalProfit, dailyProfit, monthlyProfit, margin };
-  }, [expenses, sales, accounts, today, currentMonth, currentYear]);
+    return { 
+      periodExpenses, 
+      periodSales, 
+      totalBalance, 
+      dailyExpenses, 
+      dailySales, 
+      monthlyExpenses, 
+      monthlySales, 
+      periodProfit, 
+      dailyProfit, 
+      monthlyProfit, 
+      totalProfit,
+      margin 
+    };
+  }, [expenses, sales, accounts, today, currentMonth, currentYear, activePeriod]);
 
   const chartData = useMemo(() => {
     const months: Record<string, { name: string; vendas: number; despesas: number }> = {};
@@ -63,15 +101,36 @@ const BusinessDashboard = () => {
 
   const cards = [
     { title: 'Saldo em Contas', value: fmt(stats.totalBalance), icon: Wallet, color: 'text-primary' },
-    { title: 'Faturamento Total', value: fmt(stats.totalSales), icon: DollarSign, color: 'text-emerald-500' },
-    { title: 'Despesas Totais', value: fmt(stats.totalExpenses), icon: TrendingDown, color: 'text-red-500' },
-    { title: 'Lucro Total', value: fmt(stats.totalProfit), icon: TrendingUp, color: stats.totalProfit >= 0 ? 'text-emerald-500' : 'text-red-500' },
+    { title: 'Faturamento ' + (activePeriod === 'day' ? 'Hoje' : activePeriod === 'week' ? 'Semana' : 'Mês'), value: fmt(stats.periodSales), icon: DollarSign, color: 'text-emerald-500' },
+    { title: 'Despesas ' + (activePeriod === 'day' ? 'Hoje' : activePeriod === 'week' ? 'Semana' : 'Mês'), value: fmt(stats.periodExpenses), icon: TrendingDown, color: 'text-red-500' },
+    { title: 'Lucro ' + (activePeriod === 'day' ? 'Hoje' : activePeriod === 'week' ? 'Semana' : 'Mês'), value: fmt(stats.periodProfit), icon: TrendingUp, color: stats.periodProfit >= 0 ? 'text-emerald-500' : 'text-red-500' },
     { title: 'Margem de Lucro', value: `${stats.margin.toFixed(1)}%`, icon: Percent, color: 'text-primary' },
   ];
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Financeiro Empresa</h1>
+      <div className="flex flex-col gap-4">
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-bold">Financeiro Empresa</h1>
+          <div className="p-2 rounded-xl bg-secondary/50 flex items-center gap-2 text-xs font-medium text-muted-foreground">
+            <Calendar className="h-3.5 w-3.5" />
+            {activePeriod === 'day' ? 'Hoje' : activePeriod === 'week' ? 'Últimos 7 dias' : 'Este Mês'}
+          </div>
+        </div>
+
+        <Tabs 
+          defaultValue="month" 
+          value={activePeriod} 
+          onValueChange={(v) => setActivePeriod(v as any)} 
+          className="w-full"
+        >
+          <TabsList className="grid w-full grid-cols-3 bg-muted/50 p-1 h-12 rounded-xl">
+            <TabsTrigger value="day" className="rounded-lg">Dia</TabsTrigger>
+            <TabsTrigger value="week" className="rounded-lg">Semana</TabsTrigger>
+            <TabsTrigger value="month" className="rounded-lg">Mês</TabsTrigger>
+          </TabsList>
+        </Tabs>
+      </div>
 
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
         {cards.map((c, i) => (
