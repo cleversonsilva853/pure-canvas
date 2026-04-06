@@ -66,8 +66,10 @@ export const NotificationForm = ({ open, onOpenChange, onSuccess, editingNotific
       return;
     }
 
-    const scheduledDateObj = new Date(`${date}T${time}`);
-    if (scheduledDateObj <= new Date()) {
+    const [year, month, day] = date.split('-').map(Number);
+    const [hours, minutes] = time.split(':').map(Number);
+    const scheduledDateObj = new Date(year, month - 1, day, hours, minutes, 0);
+    if (isNaN(scheduledDateObj.getTime()) || scheduledDateObj <= new Date()) {
       toast.error("A data e hora agendada deve ser no futuro.");
       return;
     }
