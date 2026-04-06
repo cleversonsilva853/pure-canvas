@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Bell, Plus, Trash2, Edit, AlertCircle, RefreshCw, Repeat } from "lucide-react";
+import { Bell, Plus, Trash2, Edit, AlertCircle, RefreshCw, Repeat, CheckCircle2, XCircle, Smartphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
