@@ -108,19 +108,54 @@ export default function Notifications() {
         </Button>
       </div>
 
-      {isSupported && !isSubscribed && permission !== "denied" && (
-        <Card className="bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-900/50">
-          <CardContent className="p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-3 text-yellow-800 dark:text-yellow-200">
-              <AlertCircle className="h-5 w-5" />
-              <p className="text-sm font-medium">As notificações push estão desativadas neste dispositivo.</p>
+      <Card className="border-border/50">
+        <CardContent className="p-5">
+          <div className="flex items-center gap-3 mb-3">
+            <Smartphone className="h-5 w-5 text-primary" />
+            <h3 className="font-semibold text-base">Notificações Push neste dispositivo</h3>
+          </div>
+
+          {!isSupported ? (
+            <div className="flex items-center gap-3 text-muted-foreground">
+              <XCircle className="h-5 w-5 text-destructive" />
+              <div>
+                <p className="text-sm font-medium">Não suportado</p>
+                <p className="text-xs text-muted-foreground">Este navegador não suporta notificações push.</p>
+              </div>
             </div>
-            <Button variant="outline" size="sm" onClick={() => user && subscribe(user.id)} className="border-yellow-300 hover:bg-yellow-100 text-yellow-800 dark:text-yellow-200 dark:border-yellow-800 dark:hover:bg-yellow-900/40">
-              Ativar Notificações
-            </Button>
-          </CardContent>
-        </Card>
-      )}
+          ) : permission === "denied" ? (
+            <div className="flex items-center gap-3">
+              <XCircle className="h-5 w-5 text-destructive" />
+              <div>
+                <p className="text-sm font-medium text-destructive">Bloqueado</p>
+                <p className="text-xs text-muted-foreground">As notificações foram bloqueadas no navegador. Acesse as configurações do navegador para desbloquear.</p>
+              </div>
+            </div>
+          ) : isSubscribed ? (
+            <div className="flex items-center gap-3">
+              <CheckCircle2 className="h-5 w-5 text-green-500" />
+              <div>
+                <p className="text-sm font-medium text-green-600 dark:text-green-400">Ativado</p>
+                <p className="text-xs text-muted-foreground">Este dispositivo receberá notificações push dos seus lembretes.</p>
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <AlertCircle className="h-5 w-5 text-yellow-500" />
+                <div>
+                  <p className="text-sm font-medium text-yellow-600 dark:text-yellow-400">Desativado</p>
+                  <p className="text-xs text-muted-foreground">Ative para receber lembretes diretamente neste dispositivo.</p>
+                </div>
+              </div>
+              <Button size="sm" onClick={() => user && subscribe(user.id)} className="gap-2">
+                <Bell className="h-4 w-4" />
+                Ativar Notificações
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {isLoading ? (
         <div className="flex justify-center py-12">
