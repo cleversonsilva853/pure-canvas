@@ -28,6 +28,7 @@ import {
   TrendingUp,
   Bell,
   HandCoins,
+  CalendarClock,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState, useEffect } from 'react';
@@ -44,6 +45,7 @@ const personalNavItems = [
   { to: '/goals', icon: Target, label: 'Metas' },
   { to: '/reports', icon: BarChart3, label: 'Relatórios' },
   { to: '/contas-a-receber', icon: HandCoins, label: 'Contas a Receber' },
+  { to: '/contas-a-pagar', icon: CalendarClock, label: 'Contas a Pagar' },
   { to: '/notifications', icon: Bell, label: 'Notificações' },
   { to: '/settings', icon: SettingsIcon, label: 'Configurações' },
 ];

@@ -3,7 +3,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { useBusinessOwnerId } from '@/hooks/useBusinessOwnerId';
-import { getTodayInputDate } from '@/lib/utils';
 
 // ---- Business Accounts ----
 export const useBusinessAccounts = () => {
@@ -49,31 +48,14 @@ export const useCreateBusinessExpense = () => {
   const qc = useQueryClient();
   const { toast } = useToast();
   const ownerId = useBusinessOwnerId();
-  const { user } = useAuth();
 
   return useMutation({
     mutationFn: async (values: { name: string; category: string; amount: number; date: string; observation?: string }) => {
       const { error } = await supabase.from('business_expenses').insert({ ...values, user_id: ownerId! });
       if (error) throw error;
-      
-      const todayStr = getTodayInputDate();
-      if (values.date > todayStr && user?.id) {
-        const [y, m, d] = values.date.split('-').map(Number);
-        const scheduledDateObj = new Date(y, m - 1, d, 7, 0, 0); // 07:00 AM
-        
-        await supabase.from('notifications').insert([{
-           title: `Lembrete de Despesa Empresarial`,
-           description: `A despesa "${values.name}" (R$ ${values.amount.toFixed(2)}) vence hoje!${values.observation ? ` Obs: ${values.observation}` : ''}`,
-           scheduled_for: scheduledDateObj.toISOString(),
-           status: 'pending',
-           recurrence: 'none',
-           user_id: user.id
-        }]);
-      }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['business_expenses'] });
-      qc.invalidateQueries({ queryKey: ['notifications'] });
       toast({ title: 'Despesa cadastrada!' });
     },
     onError: () => toast({ title: 'Erro ao cadastrar despesa', variant: 'destructive' }),
