@@ -15,6 +15,7 @@ type NotificationFormProps = {
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
   editingNotification?: any;
+  context?: 'personal' | 'business';
 };
 
 const recurrenceOptions = [
@@ -34,7 +35,7 @@ const WEEK_DAYS = [
   { value: '6', label: 'Sáb' },
 ];
 
-export const NotificationForm = ({ open, onOpenChange, onSuccess, editingNotification }: NotificationFormProps) => {
+export const NotificationForm = ({ open, onOpenChange, onSuccess, editingNotification, context = 'personal' }: NotificationFormProps) => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [date, setDate] = useState("");
@@ -59,11 +60,9 @@ export const NotificationForm = ({ open, onOpenChange, onSuccess, editingNotific
       const minutes = String(scheduledDate.getMinutes()).padStart(2, '0');
       setTime(`${hours}:${minutes}`);
 
-      // Mapear recorrências legadas (weekly/yearly) para 'none'
       const rec = editingNotification.recurrence || "none";
       setRecurrence(['weekly', 'yearly'].includes(rec) ? 'none' : rec);
 
-      // Carregar dias da semana salvos
       if (editingNotification.weekdays_config) {
         try {
           setSelectedWeekdays(JSON.parse(editingNotification.weekdays_config));
@@ -118,8 +117,8 @@ export const NotificationForm = ({ open, onOpenChange, onSuccess, editingNotific
         : null;
 
       const bodyArgs = editingNotification
-        ? { title, description, scheduled_for, status: 'pending', recurrence, weekdays_config }
-        : { title, description, scheduled_for, status: 'pending', recurrence, weekdays_config, user_id: session?.user?.id };
+        ? { title, description, scheduled_for, status: 'pending', recurrence, weekdays_config, context }
+        : { title, description, scheduled_for, status: 'pending', recurrence, weekdays_config, context, user_id: session?.user?.id };
 
       let submitError = null;
 

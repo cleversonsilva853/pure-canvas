@@ -45,6 +45,7 @@ export const useCreateBusinessContaAReceber = () => {
           scheduled_for: scheduledDateObj.toISOString(),
           status: 'pending',
           recurrence: 'none',
+          context: 'business',
           user_id: user.id,
         }]);
       }

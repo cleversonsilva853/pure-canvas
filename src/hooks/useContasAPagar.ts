@@ -43,6 +43,7 @@ export const useCreateContaAPagar = () => {
            scheduled_for: scheduledDateObj.toISOString(),
            status: 'pending',
            recurrence: 'none',
+           context: 'personal',
            user_id: user.id
         }]);
       }

@@ -60,6 +60,7 @@ const businessNavItems = [
   { to: '/business/accounts', icon: Landmark, label: 'Contas' },
   { to: '/business/contas-a-receber', icon: HandCoins, label: 'Contas a Receber' },
   { to: '/business/contas-a-pagar', icon: CalendarClock, label: 'Contas a Pagar' },
+  { to: '/business/notifications', icon: Bell, label: 'Notificações' },
 ];
 
 

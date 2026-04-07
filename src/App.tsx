@@ -34,6 +34,7 @@ import ContasAReceber from "@/pages/ContasAReceber";
 import ContasAPagar from "@/pages/ContasAPagar";
 import BusinessContasAPagar from "@/pages/BusinessContasAPagar";
 import BusinessContasAReceber from "@/pages/BusinessContasAReceber";
+import BusinessNotifications from "@/pages/BusinessNotifications";
 
 const queryClient = new QueryClient();
 
@@ -91,6 +92,7 @@ const App = () => {
                     <Route path="business/accounts" element={<BusinessAccounts />} />
                     <Route path="business/contas-a-pagar" element={<BusinessContasAPagar />} />
                     <Route path="business/contas-a-receber" element={<BusinessContasAReceber />} />
+                    <Route path="business/notifications" element={<BusinessNotifications />} />
                   </Route>
                   <Route path="*" element={<Navigate to="/404" replace />} />
                   <Route path="/404" element={<NotFound />} />

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
@@ -53,7 +53,7 @@ function getRecurrenceLabel(n: Notification): string {
   return recurrenceBaseLabels[n.recurrence] || n.recurrence;
 }
 
-export default function Notifications() {
+export default function BusinessNotifications() {
   const [formOpen, setFormOpen] = useState(false);
   const [editingNotification, setEditingNotification] = useState<Notification | undefined>();
   const queryClient = useQueryClient();
@@ -61,12 +61,12 @@ export default function Notifications() {
   const { user } = useAuth();
 
   const { data: notifications = [], isLoading, error } = useQuery({
-    queryKey: ['notifications'],
+    queryKey: ['business_notifications'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('notifications' as any)
         .select('*')
-        .eq('context', 'personal')
+        .eq('context', 'business')
         .order('scheduled_for', { ascending: true });
 
       if (error) throw error;
@@ -86,7 +86,7 @@ export default function Notifications() {
     },
     onSuccess: () => {
       toast.success("Notificação excluída com sucesso.");
-      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      queryClient.invalidateQueries({ queryKey: ['business_notifications'] });
     },
     onError: (err: any) => {
       toast.error(err.message || "Erro ao excluir notificação.");
@@ -123,9 +123,9 @@ export default function Notifications() {
         <div>
           <h1 className="text-3xl flex items-center gap-2 font-bold tracking-tight">
             <Bell className="h-8 w-8 text-primary" />
-            Lembretes
+            Notificações Empresariais
           </h1>
-          <p className="text-muted-foreground mt-1">Gerencie suas notificações e lembretes agendados.</p>
+          <p className="text-muted-foreground mt-1">Gerencie os lembretes do seu negócio.</p>
         </div>
         <Button onClick={handleCreate} className="gap-2">
           <Plus className="h-4 w-4" /> Novo Lembrete
@@ -192,8 +192,8 @@ export default function Notifications() {
       ) : notifications.length === 0 ? (
         <div className="text-center py-16 border border-dashed rounded-xl bg-muted/20">
           <Bell className="h-12 w-12 text-muted-foreground/50 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-foreground">Nenhum lembrete</h3>
-          <p className="text-muted-foreground mt-1 mb-4">Você ainda não possui notificações agendadas.</p>
+          <h3 className="text-lg font-medium text-foreground">Nenhum lembrete empresarial</h3>
+          <p className="text-muted-foreground mt-1 mb-4">Você ainda não possui notificações agendadas para o negócio.</p>
           <Button variant="outline" onClick={handleCreate}>Criar primeiro lembrete</Button>
         </div>
       ) : (
@@ -245,9 +245,9 @@ export default function Notifications() {
       <NotificationForm
         open={formOpen}
         onOpenChange={setFormOpen}
-        onSuccess={() => queryClient.invalidateQueries({ queryKey: ['notifications'] })}
+        onSuccess={() => queryClient.invalidateQueries({ queryKey: ['business_notifications'] })}
         editingNotification={editingNotification}
-        context="personal"
+        context="business"
       />
     </div>
   );
