@@ -58,6 +58,8 @@ const businessNavItems = [
   { to: '/business/pricing', icon: TrendingUp, label: 'Precificação' },
   { to: '/business/dre', icon: LineChart, label: 'DRE' },
   { to: '/business/accounts', icon: Landmark, label: 'Contas' },
+  { to: '/business/contas-a-receber', icon: HandCoins, label: 'Contas a Receber' },
+  { to: '/business/contas-a-pagar', icon: CalendarClock, label: 'Contas a Pagar' },
 ];
 
 
