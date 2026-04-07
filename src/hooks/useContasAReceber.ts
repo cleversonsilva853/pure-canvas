@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { getTodayInputDate } from '@/lib/utils';
 
 export const useContasAReceber = () => {
   const { user } = useAuth();
@@ -29,9 +30,26 @@ export const useCreateContaAReceber = () => {
     mutationFn: async (values: { name: string; amount: number; start_date: string; due_date: string; observation?: string }) => {
       const { error } = await supabase.from('contas_a_receber').insert({ ...values, user_id: user!.id });
       if (error) throw error;
+
+      // Auto-schedule notification for future receivables
+      const todayStr = getTodayInputDate();
+      if (values.due_date > todayStr && user?.id) {
+        const [y, m, d] = values.due_date.split('-').map(Number);
+        const scheduledDateObj = new Date(y, m - 1, d, 7, 0, 0); // 07:00 AM
+        
+        await supabase.from('notifications').insert([{
+           title: `Lembrete de Conta a Receber`,
+           description: `A conta a receber "${values.name}" (R$ ${values.amount.toFixed(2)}) vence hoje!${values.observation ? ` Obs: ${values.observation}` : ''}`,
+           scheduled_for: scheduledDateObj.toISOString(),
+           status: 'pending',
+           recurrence: 'none',
+           user_id: user.id
+        }]);
+      }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['contas_a_receber'] });
+      qc.invalidateQueries({ queryKey: ['notifications'] });
       toast({ title: 'Conta a receber cadastrada!' });
     },
     onError: () => toast({ title: 'Erro ao cadastrar conta a receber', variant: 'destructive' }),
