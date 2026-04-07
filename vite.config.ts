@@ -63,12 +63,11 @@ export default defineConfig(({ mode }) => ({
     chunkSizeWarningLimit: 1000,
     rollupOptions: {
       output: {
-        manualChunks: {
-          vendor: ['react', 'react-dom', 'react-router-dom'],
-          charts: ['recharts'],
-          pdf: ['jspdf', 'jspdf-autotable'],
-          excel: ['xlsx'],
-          ui: ['lucide-react']
+        manualChunks(id) {
+          if (id.includes('node_modules/recharts') || id.includes('node_modules/d3')) return 'charts';
+          if (id.includes('node_modules/jspdf') || id.includes('node_modules/html2canvas')) return 'pdf';
+          if (id.includes('node_modules/xlsx')) return 'excel';
+          if (id.includes('node_modules/react-dom') || id.includes('node_modules/react/') || id.includes('node_modules/react-router-dom')) return 'vendor';
         }
       }
     }
