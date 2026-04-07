@@ -1,5 +1,8 @@
+// @ts-ignore: Deno standard server
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+// @ts-ignore: Supabase remote client
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+// @ts-ignore: Web-push npm package
 import webPush from 'npm:web-push@3.6.7'
 
 const corsHeaders = {
@@ -7,7 +10,8 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-serve(async (req) => {
+// @ts-ignore: Deno req type
+serve(async (req: any) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
@@ -15,12 +19,17 @@ serve(async (req) => {
   try {
     // Instanciar com Service Role Key para ignorar RLS e ler todas notificações agendadas
     const supabaseClient = createClient(
+      // @ts-ignore: Deno global
       Deno.env.get('SUPABASE_URL') ?? '',
+      // @ts-ignore: Deno global
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
+    // @ts-ignore: Deno global
     const vapidPublicKey = Deno.env.get('VAPID_PUBLIC_KEY')
+    // @ts-ignore: Deno global
     const vapidPrivateKey = Deno.env.get('VAPID_PRIVATE_KEY')
+    // @ts-ignore: Deno global
     const vapidSubject = Deno.env.get('VAPID_SUBJECT') ?? 'mailto:suporte@inforcontrol.com'
 
     if (!vapidPublicKey || !vapidPrivateKey) {
@@ -40,6 +49,7 @@ serve(async (req) => {
       .eq('status', 'pending')
       .lte('scheduled_for', new Date().toISOString())
 
+    // @ts-ignore: error checking
     if (error) throw error
 
     if (!notifications || notifications.length === 0) {
@@ -48,21 +58,29 @@ serve(async (req) => {
       })
     }
 
-    const userIds = notifications.map(n => n.user_id)
+    // LOCK: Marcar imediatamente como 'sent' para evitar que execuções 
+    // paralelas (overlaps de cron) processem as mesmas notificações.
+    const notificationIds = notifications.map((n: any) => n.id);
+    await supabaseClient
+      .from('notifications')
+      .update({ status: 'sent', updated_at: new Date().toISOString() })
+      .in('id', notificationIds);
 
-    // Buscar as inscrições dos usuários atrelados às notificações
+    const userIds = [...new Set(notifications.map((n: any) => n.user_id))];
+
+    // Buscar as inscrições dos usuários
     const { data: subsData, error: subsError } = await supabaseClient
       .from('push_subscriptions')
       .select('*')
       .in('user_id', userIds)
 
+    // @ts-ignore: error checking
     if (subsError) throw subsError
 
-    const promises = []
+    const dbOps = []
 
     for (const notification of notifications) {
-      // Filtrar as inscrições apenas deste usuário
-      const userSubs = (subsData || []).filter(s => s.user_id === notification.user_id)
+      const userSubs = (subsData || []).filter((s: any) => s.user_id === notification.user_id)
       
       const payload = JSON.stringify({
         title: notification.title,
@@ -70,98 +88,77 @@ serve(async (req) => {
         data: { url: '/notifications' }
       })
 
-      let hasError = false;
-      let lastErrorMessage = "";
-
       if (userSubs.length === 0) {
-        hasError = true;
-        lastErrorMessage = "Nenhum dispositivo encontrado (push_subscriptions vazio para este usuário). O usuário não permitiu notificações ou limpou os dados.";
+        dbOps.push(
+          supabaseClient.from('notifications').update({ 
+            status: 'failed', 
+            description: notification.description + '\n\n[AVISO]: Nenhum dispositivo push encontrado.',
+            updated_at: new Date().toISOString() 
+          }).eq('id', notification.id)
+        );
+        continue;
       }
 
-      // Enviar os pushes para cada dispositivo cadastrado do usuário
+      let allSuccessfullySent = true;
+      let lastErrorMessage = "";
+
       for (const sub of userSubs) {
         const pushSubscription = {
           endpoint: sub.endpoint,
-          keys: {
-            p256dh: sub.p256dh,
-            auth: sub.auth
-          }
+          keys: { p256dh: sub.p256dh, auth: sub.auth }
         }
 
         try {
+          // @ts-ignore: webPush send type
           await webPush.sendNotification(pushSubscription, payload);
-        } catch (err) {
-          hasError = true;
-          lastErrorMessage = err.message || JSON.stringify(err);
-          console.error(`Erro ao enviar push para endpoint ${sub.endpoint}:`, err);
+        } catch (err: any) {
+          console.error(`Erro envio push para ${sub.endpoint}:`, err);
+          
+          // Se o erro for 404 (Not Found) ou 410 (Gone), a inscrição é inválida.
+          // Devemos removê-la para não tentar mais e não gerar duplicidade no futuro.
+          if (err.statusCode === 404 || err.statusCode === 410) {
+            dbOps.push(supabaseClient.from('push_subscriptions').delete().eq('id', sub.id));
+          } else {
+            allSuccessfullySent = false;
+            lastErrorMessage = err.message || JSON.stringify(err);
+          }
         }
       }
 
-      if (hasError) {
-        // Falha no envio => Atualizar para failed e gravar o erro
-        promises.push(
+      if (!allSuccessfullySent) {
+        dbOps.push(
           supabaseClient.from('notifications').update({ 
             status: 'failed', 
-            description: notification.description + '\n\n[FALHA NO PUSH]: ' + lastErrorMessage,
+            description: notification.description + '\n\n[FALHA PARCIAL]: ' + lastErrorMessage,
             updated_at: new Date().toISOString() 
           }).eq('id', notification.id)
         );
       } else {
+        // Sucesso total ou dispositivos limpos => Tratar recorrência
         const recurrence = notification.recurrence || 'none';
-        
         if (recurrence !== 'none') {
-          // Reagendar para a próxima data de acordo com a recorrência
-          const currentScheduled = new Date(notification.scheduled_for);
-          let nextDate = new Date(currentScheduled);
-
-          switch (recurrence) {
-            case 'daily':
-              nextDate.setDate(nextDate.getDate() + 1);
-              break;
-            case 'weekdays':
-              // Pular para o próximo dia da semana (seg-sex)
-              do {
-                nextDate.setDate(nextDate.getDate() + 1);
-              } while (nextDate.getDay() === 0 || nextDate.getDay() === 6);
-              break;
-            case 'weekly':
-              nextDate.setDate(nextDate.getDate() + 7);
-              break;
-            case 'monthly':
-              nextDate.setMonth(nextDate.getMonth() + 1);
-              break;
-            case 'yearly':
-              nextDate.setFullYear(nextDate.getFullYear() + 1);
-              break;
-          }
-
-          // Atualizar a notificação reagendando com status pendente
-          promises.push(
+          const nextDate = calculateNextDate(new Date(notification.scheduled_for), recurrence);
+          dbOps.push(
             supabaseClient.from('notifications').update({ 
               status: 'pending',
               scheduled_for: nextDate.toISOString(),
               updated_at: new Date().toISOString() 
             }).eq('id', notification.id)
           );
-        } else {
-          // Não recorrente: marcar como enviado
-          promises.push(
-            supabaseClient.from('notifications').update({ 
-              status: 'sent', 
-              updated_at: new Date().toISOString() 
-            }).eq('id', notification.id)
-          );
         }
+        // Se não for recorrente, já marcamos como 'sent' no lock inicial.
       }
     }
 
-    await Promise.all(promises)
+    if (dbOps.length > 0) {
+      await Promise.all(dbOps)
+    }
 
     return new Response(
       JSON.stringify({ message: `Processadas ${notifications.length} notificações` }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
     )
-  } catch (error) {
+  } catch (error: any) {
     console.error("Erro no process-scheduled-notifications:", error)
     return new Response(
       JSON.stringify({ error: error.message }),
@@ -169,3 +166,27 @@ serve(async (req) => {
     )
   }
 })
+
+function calculateNextDate(current: Date, recurrence: string): Date {
+  const nextDate = new Date(current);
+  switch (recurrence) {
+    case 'daily':
+      nextDate.setDate(nextDate.getDate() + 1);
+      break;
+    case 'weekdays':
+      do {
+        nextDate.setDate(nextDate.getDate() + 1);
+      } while (nextDate.getDay() === 0 || nextDate.getDay() === 6);
+      break;
+    case 'weekly':
+      nextDate.setDate(nextDate.getDate() + 7);
+      break;
+    case 'monthly':
+      nextDate.setMonth(nextDate.getMonth() + 1);
+      break;
+    case 'yearly':
+      nextDate.setFullYear(nextDate.getFullYear() + 1);
+      break;
+  }
+  return nextDate;
+}
