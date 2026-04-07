@@ -12,7 +12,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useContasAPagar, useCreateContaAPagar, useUpdateContaAPagar, useDeleteContaAPagar } from '@/hooks/useContasAPagar';
 import { useAccounts, useCategories, useBudgets, useCreditCards, useTransactions } from '@/hooks/useFinanceData';
-import { useBusinessAccounts, useBusinessExpenseCategories, useCreateBusinessExpense } from '@/hooks/useBusinessData';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -23,14 +22,12 @@ const ContasAPagar = () => {
   const { user } = useAuth();
   const { data: contas = [], isLoading } = useContasAPagar();
   const { data: personalAccounts = [] } = useAccounts();
-  const { data: businessAccounts = [] } = useBusinessAccounts();
   
   // Data for the payment forms
   const { data: categories = [] } = useCategories();
   const { data: budgets = [] } = useBudgets();
   const { data: creditCards = [] } = useCreditCards();
   const { data: transactions = [] } = useTransactions();
-  const { data: customCategories = [] } = useBusinessExpenseCategories();
 
   const queryClient = useQueryClient();
 
@@ -38,7 +35,6 @@ const ContasAPagar = () => {
   const createMutation = useCreateContaAPagar();
   const updateMutation = useUpdateContaAPagar();
   const deleteMutation = useDeleteContaAPagar();
-  const createBusinessExpense = useCreateBusinessExpense();
 
   const [open, setOpen] = useState(false);
   const [name, setName] = useState('');
@@ -52,11 +48,9 @@ const ContasAPagar = () => {
   const [selectedPayId, setSelectedPayId] = useState<string | null>(null);
   
   // Pay modal Form states
-  const [payContext, setPayContext] = useState<'personal' | 'business'>('personal');
   const [payAmount, setPayAmount] = useState('');
   const [payName, setPayName] = useState('');
   const [payDate, setPayDate] = useState(getTodayInputDate());
-  const [payObservation, setPayObservation] = useState('');
   const [payCategoryId, setPayCategoryId] = useState('');
   const [payAccountId, setPayAccountId] = useState('');
   const [payCreditCardId, setPayCreditCardId] = useState('none');
@@ -72,11 +66,9 @@ const ContasAPagar = () => {
 
   const handleOpenPayModal = (c: any) => {
     setSelectedPayId(c.id);
-    setPayContext('personal');
     setPayAmount(String(c.amount));
     setPayName(c.name);
     setPayDate(getTodayInputDate());
-    setPayObservation(c.observation || '');
     setPayCategoryId('');
     setPayAccountId('');
     setPayCreditCardId('none');
@@ -99,92 +91,62 @@ const ContasAPagar = () => {
       toast.error('Informe um valor válido');
       return;
     }
-    if (payContext === 'personal' && !payCategoryId) {
+    if (!payCategoryId) {
       toast.error('Selecione uma categoria');
       return;
     }
-    if (payContext === 'business' && !payCategoryId) {
-      toast.error('Selecione uma categoria (ou Outros)');
-      return;
-    }
 
-    if (payContext === 'personal' && !payAccountId && payCreditCardId === 'none') {
+    if (!payAccountId && payCreditCardId === 'none') {
       toast.error('Selecione uma conta ou um cartão de crédito');
-      return;
-    }
-    if (payContext === 'business' && !payAccountId) {
-      toast.error('Selecione uma conta empresarial');
       return;
     }
 
     setIsPaying(true);
     try {
-      if (payContext === 'personal') {
-        // PERSONAL EXPENSE FLOW
-        if (payCategoryId) {
-          const budget = budgets.find(b => b.category_id === payCategoryId);
-          if (budget) {
-            const spent = transactions
-              .filter(t => t.type === 'expense' && t.category_id === payCategoryId)
-              .reduce((sum, t) => sum + Number(t.amount), 0);
-            
-            const totalWithNew = spent + parseFloat(payAmount);
-            if (totalWithNew > Number(budget.amount)) {
-              const confirm = window.confirm('Fora do seu Orçamento. Tem certeza disso?');
-              if (!confirm) {
-                setIsPaying(false);
-                return;
-              }
+      // PERSONAL EXPENSE FLOW
+      if (payCategoryId) {
+        const budget = budgets.find(b => b.category_id === payCategoryId);
+        if (budget) {
+          const spent = transactions
+            .filter(t => t.type === 'expense' && t.category_id === payCategoryId)
+            .reduce((sum, t) => sum + Number(t.amount), 0);
+          
+          const totalWithNew = spent + parseFloat(payAmount);
+          if (totalWithNew > Number(budget.amount)) {
+            const confirm = window.confirm('Fora do seu Orçamento. Tem certeza disso?');
+            if (!confirm) {
+              setIsPaying(false);
+              return;
             }
           }
         }
+      }
 
-        const { error: txError } = await supabase.from('transactions').insert({
-          user_id: user.id,
-          type: 'expense',
-          amount: parseFloat(payAmount),
-          description: payName,
-          date: payDate,
-          category_id: payCategoryId || null,
-          account_id: payAccountId || null,
-          credit_card_id: payCreditCardId !== 'none' ? payCreditCardId : null,
-          is_paid: payCreditCardId === 'none',
-        });
-        if (txError) throw txError;
+      const { error: txError } = await supabase.from('transactions').insert({
+        user_id: user.id,
+        type: 'expense',
+        amount: parseFloat(payAmount),
+        description: payName,
+        date: payDate,
+        category_id: payCategoryId || null,
+        account_id: payAccountId || null,
+        credit_card_id: payCreditCardId !== 'none' ? payCreditCardId : null,
+        is_paid: payCreditCardId === 'none',
+      });
+      if (txError) throw txError;
 
-        if (payAccountId && payCreditCardId === 'none') {
-          const acc = personalAccounts.find(a => a.id === payAccountId);
-          if (acc) {
-            const newBalance = Number(acc.balance) - parseFloat(payAmount);
-            await supabase.from('accounts').update({ balance: newBalance }).eq('id', payAccountId);
-          }
-        }
-        
-      } else {
-        // BUSINESS EXPENSE FLOW
-        await createBusinessExpense.mutateAsync({
-          name: payName,
-          category: payCategoryId,
-          amount: parseFloat(payAmount),
-          date: payDate,
-          observation: payObservation || undefined,
-        });
-
-        if (payAccountId) {
-          const acc = businessAccounts.find(a => a.id === payAccountId);
-          if (acc) {
-            const newBalance = Number(acc.balance) - parseFloat(payAmount);
-            await supabase.from('business_accounts').update({ balance: newBalance }).eq('id', payAccountId);
-          }
+      if (payAccountId && payCreditCardId === 'none') {
+        const acc = personalAccounts.find(a => a.id === payAccountId);
+        if (acc) {
+          const newBalance = Number(acc.balance) - parseFloat(payAmount);
+          await supabase.from('accounts').update({ balance: newBalance }).eq('id', payAccountId);
         }
       }
 
       updateMutation.mutate({ id: selectedPayId, is_paid: true });
 
       await queryClient.invalidateQueries({ queryKey: ['accounts'] });
-      await queryClient.invalidateQueries({ queryKey: ['business_accounts'] });
       await queryClient.invalidateQueries({ queryKey: ['transactions'] });
-      await queryClient.invalidateQueries({ queryKey: ['business_expenses'] });
       
       toast.success('Despesa cadastrada e Conta Paga com sucesso!');
       setPayOpen(false);
@@ -203,8 +165,6 @@ const ContasAPagar = () => {
   const totalPendente = pendentes.reduce((s: number, c: any) => s + Number(c.amount), 0);
   const totalPago = pagas.reduce((s: number, c: any) => s + Number(c.amount), 0);
   const isOverdue = (due: string) => new Date(due + 'T23:59:59') < new Date();
-  
-  const allBusinessCategories = ['Outros', ...customCategories.map(c => c.name)];
 
   return (
     <div className="space-y-6">
@@ -263,33 +223,6 @@ const ContasAPagar = () => {
               Esta ação marcará a conta como paga e criará um registro oficial de despesa no sistema.
             </p>
 
-            <div className="grid grid-cols-2 gap-2 mt-2">
-              <Button
-                type="button"
-                variant={payContext === 'personal' ? 'default' : 'outline'}
-                onClick={() => {
-                  setPayContext('personal');
-                  setPayAccountId('');
-                  setPayCategoryId('');
-                }}
-                className={payContext === 'personal' ? 'bg-primary text-primary-foreground' : ''}
-              >
-                Pessoal (Transação)
-              </Button>
-              <Button
-                type="button"
-                variant={payContext === 'business' ? 'default' : 'outline'}
-                onClick={() => {
-                  setPayContext('business');
-                  setPayAccountId('');
-                  setPayCategoryId('Outros'); // default for business
-                }}
-                className={payContext === 'business' ? 'bg-primary text-primary-foreground' : ''}
-              >
-                Empresarial (Despesa)
-              </Button>
-            </div>
-
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Valor</Label>
@@ -310,7 +243,7 @@ const ContasAPagar = () => {
             </div>
 
             <div className="space-y-2">
-              <Label>{payContext === 'personal' ? 'Descrição' : 'Nome'}</Label>
+              <Label>Descrição</Label>
               <Input
                 placeholder="Ex: Supermercado"
                 value={payName}
@@ -319,65 +252,42 @@ const ContasAPagar = () => {
               />
             </div>
 
-            {payContext === 'business' && (
-              <div className="space-y-2">
-                <Label>Observação</Label>
-                <Textarea 
-                  placeholder="Opcional"
-                  value={payObservation}
-                  onChange={(e) => setPayObservation(e.target.value)}
-                />
-              </div>
-            )}
-
             <div className="space-y-2">
               <Label>Categoria</Label>
               <Select value={payCategoryId} onValueChange={setPayCategoryId}>
                 <SelectTrigger><SelectValue placeholder="Selecione a Categoria" /></SelectTrigger>
                 <SelectContent>
-                  {payContext === 'personal' 
-                    ? categories.filter(c => c.type === 'expense').map((c) => (
-                        <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                      ))
-                    : allBusinessCategories.map((c) => (
-                        <SelectItem key={c} value={c}>{c}</SelectItem>
-                      ))
-                  }
+                  {categories.filter(c => c.type === 'expense').map((c) => (
+                    <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
 
             <div className="space-y-2">
-              <Label>Conta Origem {payContext === 'personal' && '(Opcional se Cartão)'}</Label>
+              <Label>Conta Origem (Opcional se Cartão)</Label>
               <Select value={payAccountId} onValueChange={setPayAccountId}>
                 <SelectTrigger><SelectValue placeholder="Selecione a Conta" /></SelectTrigger>
                 <SelectContent>
-                  {payContext === 'personal'
-                    ? personalAccounts.map((a) => (
-                        <SelectItem key={a.id} value={a.id}>{a.name} - R$ {Number(a.balance).toFixed(2)}</SelectItem>
-                      ))
-                    : businessAccounts.map((a) => (
-                        <SelectItem key={a.id} value={a.id}>{a.name} - R$ {Number(a.balance).toFixed(2)}</SelectItem>
-                      ))
-                  }
+                  {personalAccounts.map((a) => (
+                    <SelectItem key={a.id} value={a.id}>{a.name} - R$ {Number(a.balance).toFixed(2)}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
 
-            {payContext === 'personal' && (
-              <div className="space-y-2">
-                <Label>Cartão de Crédito (Opcional)</Label>
-                <Select value={payCreditCardId} onValueChange={setPayCreditCardId}>
-                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">Nenhum</SelectItem>
-                    {creditCards.map((c) => (
-                      <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
+            <div className="space-y-2">
+              <Label>Cartão de Crédito (Opcional)</Label>
+              <Select value={payCreditCardId} onValueChange={setPayCreditCardId}>
+                <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Nenhum</SelectItem>
+                  {creditCards.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
             <Button type="submit" className="w-full" disabled={isPaying}>
               {isPaying ? 'Processando...' : 'Confirmar e Descontar Saldo'}
