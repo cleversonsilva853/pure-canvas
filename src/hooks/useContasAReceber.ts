@@ -33,7 +33,7 @@ export const useCreateContaAReceber = () => {
 
       // Auto-schedule notification for future receivables
       const todayStr = getTodayInputDate();
-      if (values.due_date > todayStr && user?.id) {
+      if (values.due_date >= todayStr && user?.id) {
         const [y, m, d] = values.due_date.split('-').map(Number);
         const scheduledDateObj = new Date(y, m - 1, d, 7, 0, 0); // 07:00 AM
         
