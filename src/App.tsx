@@ -30,6 +30,7 @@ import BusinessPricing from "@/pages/BusinessPricing";
 import BusinessDRE from "@/pages/BusinessDRE";
 import BusinessAccounts from "@/pages/BusinessAccounts";
 import Notifications from "@/pages/Notifications";
+import ContasAReceber from "@/pages/ContasAReceber";
 
 const queryClient = new QueryClient();
 
@@ -75,6 +76,7 @@ const App = () => {
                     <Route path="reports" element={<Reports />} />
                     <Route path="categories" element={<Categories />} />
                     <Route path="notifications" element={<Notifications />} />
+                    <Route path="contas-a-receber" element={<ContasAReceber />} />
                     <Route path="settings" element={<Settings />} />
                     <Route path="business" element={<BusinessDashboard />} />
                     <Route path="business/expenses" element={<BusinessExpenses />} />
