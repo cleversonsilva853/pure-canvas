@@ -15,18 +15,36 @@ import * as XLSX from 'xlsx';
 import { usePersonalReportsData } from '@/hooks/usePersonalReports';
 import { useGoals } from '@/hooks/useFinanceData';
 import { 
-  startOfMonth, endOfMonth, startOfWeek, endOfWeek, startOfYear, endOfYear, subDays 
+  startOfMonth, endOfMonth, startOfWeek, endOfWeek, startOfYear, endOfYear, subDays, setMonth, setYear 
 } from 'date-fns';
 import { Progress } from '@/components/ui/progress';
+
+const MONTHS = [
+  'Janeiro','Fevereiro','Março','Abril','Maio','Junho',
+  'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'
+];
 
 const formatCurrency = (value: number) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
 
 const Reports = () => {
   const [period, setPeriod] = useState('this-month');
+  const now = new Date();
+  const [selectedMonth, setSelectedMonth] = useState(now.getMonth()); // 0-indexed
+  const [selectedYear, setSelectedYear] = useState(now.getFullYear());
+
+  // Generate year options (current - 3 years)
+  const yearOptions = useMemo(() => {
+    const y = now.getFullYear();
+    return [y, y - 1, y - 2, y - 3];
+  }, []);
   
   const dateRange = useMemo(() => {
     const now = new Date();
+    if (period === 'custom-month') {
+      const base = setYear(setMonth(new Date(), selectedMonth), selectedYear);
+      return { start: startOfMonth(base), end: endOfMonth(base) };
+    }
     switch(period) {
        case 'this-week': return { start: startOfWeek(now), end: endOfWeek(now) };
        case 'last-7': return { start: subDays(now, 7), end: now };
@@ -35,7 +53,7 @@ const Reports = () => {
        case 'this-month':
        default: return { start: startOfMonth(now), end: endOfMonth(now) };
     }
-  }, [period]);
+  }, [period, selectedMonth, selectedYear]);
 
   const { data, isLoading } = usePersonalReportsData(dateRange.start, dateRange.end);
   const { data: goals = [] } = useGoals();
@@ -177,17 +195,45 @@ const Reports = () => {
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <Select value={period} onValueChange={setPeriod}>
-            <SelectTrigger className="w-[180px] bg-background">
+            <SelectTrigger className="w-[185px] bg-background">
               <SelectValue placeholder="Selecione o período" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="this-month">Este Mês</SelectItem>
+              <SelectItem value="custom-month">Mês Específico</SelectItem>
               <SelectItem value="this-week">Esta Semana</SelectItem>
               <SelectItem value="last-7">Últimos 7 Dias</SelectItem>
               <SelectItem value="last-30">Últimos 30 Dias</SelectItem>
               <SelectItem value="this-year">Este Ano</SelectItem>
             </SelectContent>
           </Select>
+
+          {period === 'custom-month' && (
+            <>
+              <Select value={String(selectedMonth)} onValueChange={(v) => setSelectedMonth(Number(v))}>
+                <SelectTrigger className="w-[140px] bg-background">
+                  <SelectValue placeholder="Mês" />
+                </SelectTrigger>
+                <SelectContent>
+                  {MONTHS.map((m, i) => (
+                    <SelectItem key={i} value={String(i)}>{m}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Select value={String(selectedYear)} onValueChange={(v) => setSelectedYear(Number(v))}>
+                <SelectTrigger className="w-[100px] bg-background">
+                  <SelectValue placeholder="Ano" />
+                </SelectTrigger>
+                <SelectContent>
+                  {yearOptions.map((y) => (
+                    <SelectItem key={y} value={String(y)}>{y}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </>
+          )}
+
           <Button variant="outline" onClick={exportPDF} size="sm" className="gap-2">
             <FileDown className="h-4 w-4" /> PDF
           </Button>
