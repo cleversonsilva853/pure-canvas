@@ -56,7 +56,7 @@ const Reports = () => {
   }, [period, selectedMonth, selectedYear]);
 
   const { data, isLoading } = usePersonalReportsData(dateRange.start, dateRange.end);
-  const { data: goals = [] } = useGoals();
+  const { data: goals = [], isLoading: isGoalsLoading } = useGoals();
   
   // Custom tooltips
   const CustomTooltip = ({ active, payload, label }: any) => {
@@ -404,24 +404,28 @@ const Reports = () => {
           </CardHeader>
           <CardContent>
              <div className="space-y-5 mt-2 overflow-y-auto max-h-[260px] pr-2 custom-scrollbar">
-                {goals.length === 0 ? (
-                  <p className="text-muted-foreground text-sm h-full flex items-center justify-center pt-10">Nenhuma meta cadastrada.</p>
+                {isGoalsLoading ? (
+                  <p className="text-muted-foreground text-sm flex h-full items-center justify-center pt-10 animate-pulse">Carregando metas...</p>
+                ) : goals.length === 0 ? (
+                  <p className="text-muted-foreground text-sm h-full flex items-center justify-center pt-10">Nenhuma meta cadastrada. Crie metas na aba Metas!</p>
                 ) : (
-                  goals.map(goal => {
-                    const pct = Math.min((Number(goal.current_amount) / Number(goal.target_amount)) * 100, 100);
+                  goals.map((goal: any) => {
+                    const target = Number(goal.target_amount ?? 0);
+                    const current = Number(goal.current_amount ?? 0);
+                    const pct = target > 0 ? Math.min((current / target) * 100, 100) : 0;
                     return (
                       <div key={goal.id} className="space-y-1.5">
                         <div className="flex justify-between items-center text-sm">
-                          <span className="font-semibold">{goal.name}</span>
+                          <span className="font-semibold truncate max-w-[60%]">{goal.name}</span>
                           <span className="text-muted-foreground">{pct.toFixed(1)}%</span>
                         </div>
                         <Progress value={pct} className="h-2" />
                         <div className="flex justify-between text-xs text-muted-foreground mt-0.5">
-                          <span>{formatCurrency(Number(goal.current_amount))}</span>
-                          <span>{formatCurrency(Number(goal.target_amount))}</span>
+                          <span>{formatCurrency(current)}</span>
+                          <span>{formatCurrency(target)}</span>
                         </div>
                       </div>
-                    )
+                    );
                   })
                 )}
              </div>
