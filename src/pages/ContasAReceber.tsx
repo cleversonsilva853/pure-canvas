@@ -65,30 +65,37 @@ const ContasAReceber = () => {
     setIsReceiving(true);
     try {
       let currentBalance = 0;
-      let tableName = '';
-      
+      let isPersonal = false;
+
       const pAcc = personalAccounts.find(a => a.id === selectedAccountId);
       if (pAcc) {
         currentBalance = Number(pAcc.balance);
-        tableName = 'accounts';
+        isPersonal = true;
       } else {
         const bAcc = businessAccounts.find(a => a.id === selectedAccountId);
         if (bAcc) {
           currentBalance = Number(bAcc.balance);
-          tableName = 'business_accounts';
+          isPersonal = false;
         } else {
           throw new Error('Conta não encontrada');
         }
       }
 
-      // Update the balance
+      // Update the balance using typed table calls
       const newBalance = currentBalance + selectedReceiveAmount;
-      const { error: balanceError } = await supabase
-        .from(tableName)
-        .update({ balance: newBalance })
-        .eq('id', selectedAccountId);
-
-      if (balanceError) throw balanceError;
+      if (isPersonal) {
+        const { error: balanceError } = await supabase
+          .from('accounts')
+          .update({ balance: newBalance })
+          .eq('id', selectedAccountId);
+        if (balanceError) throw balanceError;
+      } else {
+        const { error: balanceError } = await supabase
+          .from('business_accounts')
+          .update({ balance: newBalance })
+          .eq('id', selectedAccountId);
+        if (balanceError) throw balanceError;
+      }
 
       // Mark as received
       updateMutation.mutate({ id: selectedReceiveId, is_received: true });
