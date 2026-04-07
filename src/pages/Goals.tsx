@@ -4,12 +4,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { useGoals } from '@/hooks/useFinanceData';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useGoals, useAccounts } from '@/hooks/useFinanceData';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { Plus, Target, Trash2, TrendingUp } from 'lucide-react';
+import { Plus, Target, Trash2, TrendingUp, Wallet } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Progress } from '@/components/ui/progress';
 
@@ -20,12 +21,23 @@ const Goals = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const { data: goals = [], isLoading } = useGoals();
+  const { data: accounts = [] } = useAccounts();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [name, setName] = useState('');
   const [targetAmount, setTargetAmount] = useState('');
   const [currentAmount, setCurrentAmount] = useState('');
   const [deadline, setDeadline] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // Deposit dialog state
+  const [depositDialogOpen, setDepositDialogOpen] = useState(false);
+  const [depositGoalId, setDepositGoalId] = useState<string | null>(null);
+  const [depositGoalCurrent, setDepositGoalCurrent] = useState(0);
+  const [depositValue, setDepositValue] = useState('');
+  const [depositAccountId, setDepositAccountId] = useState('');
+  const [depositLoading, setDepositLoading] = useState(false);
+
+  const activeAccounts = accounts.filter((a: any) => a.is_active);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,20 +66,52 @@ const Goals = () => {
     }
   };
 
-  const handleAddValue = async (goalId: string, current: number) => {
-    const value = prompt('Quanto deseja depositar?');
-    if (!value) return;
-    const num = parseFloat(value);
+  const openDepositDialog = (goalId: string, current: number) => {
+    setDepositGoalId(goalId);
+    setDepositGoalCurrent(current);
+    setDepositValue('');
+    setDepositAccountId('');
+    setDepositDialogOpen(true);
+  };
+
+  const handleDeposit = async () => {
+    if (!depositGoalId) return;
+    const num = parseFloat(depositValue);
     if (isNaN(num) || num <= 0) return toast.error('Valor inválido');
 
-    const { error } = await supabase
-      .from('goals')
-      .update({ current_amount: current + num })
-      .eq('id', goalId);
-    if (error) toast.error('Erro ao atualizar');
-    else {
+    if (!depositAccountId) return toast.error('Selecione uma conta');
+
+    const selectedAccount = activeAccounts.find((a: any) => a.id === depositAccountId);
+    if (!selectedAccount) return toast.error('Conta não encontrada');
+
+    if (Number(selectedAccount.balance) < num) {
+      return toast.error(`Saldo insuficiente. Disponível: ${formatCurrency(Number(selectedAccount.balance))}`);
+    }
+
+    setDepositLoading(true);
+    try {
+      // Update goal
+      const { error: goalError } = await supabase
+        .from('goals')
+        .update({ current_amount: depositGoalCurrent + num })
+        .eq('id', depositGoalId);
+      if (goalError) throw goalError;
+
+      // Deduct from account
+      const { error: accountError } = await supabase
+        .from('accounts')
+        .update({ balance: Number(selectedAccount.balance) - num })
+        .eq('id', depositAccountId);
+      if (accountError) throw accountError;
+
       toast.success(`${formatCurrency(num)} adicionado à meta!`);
       queryClient.invalidateQueries({ queryKey: ['goals'] });
+      queryClient.invalidateQueries({ queryKey: ['accounts'] });
+      setDepositDialogOpen(false);
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : 'Erro ao depositar');
+    } finally {
+      setDepositLoading(false);
     }
   };
 
@@ -79,6 +123,9 @@ const Goals = () => {
       queryClient.invalidateQueries({ queryKey: ['goals'] });
     }
   };
+
+  // Total balance across all active accounts
+  const totalBalance = activeAccounts.reduce((sum: number, a: any) => sum + Number(a.balance), 0);
 
   return (
     <div className="space-y-6">
@@ -117,6 +164,17 @@ const Goals = () => {
           </DialogContent>
         </Dialog>
       </div>
+
+      {/* Balanço Geral */}
+      <Card>
+        <CardContent className="p-4 flex items-center gap-3">
+          <Wallet className="h-5 w-5 text-primary" />
+          <div>
+            <p className="text-sm text-muted-foreground">Balanço geral das contas</p>
+            <p className="text-lg font-bold">{formatCurrency(totalBalance)}</p>
+          </div>
+        </CardContent>
+      </Card>
 
       {isLoading ? (
         <p className="text-muted-foreground text-center py-8">Carregando...</p>
@@ -158,7 +216,7 @@ const Goals = () => {
                         </p>
                       )}
                       {!isCompleted && (
-                        <Button variant="outline" size="sm" className="w-full gap-2" onClick={() => handleAddValue(goal.id, current)}>
+                        <Button variant="outline" size="sm" className="w-full gap-2" onClick={() => openDepositDialog(goal.id, current)}>
                           <TrendingUp className="h-3.5 w-3.5" />
                           Depositar
                         </Button>
@@ -174,6 +232,66 @@ const Goals = () => {
           })}
         </div>
       )}
+
+      {/* Deposit Dialog */}
+      <Dialog open={depositDialogOpen} onOpenChange={setDepositDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader><DialogTitle>Depositar na Meta</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Valor do depósito</Label>
+              <Input
+                type="number"
+                step="0.01"
+                placeholder="0,00"
+                value={depositValue}
+                onChange={(e) => setDepositValue(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Retirar da conta</Label>
+              <Select value={depositAccountId} onValueChange={setDepositAccountId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione a conta" />
+                </SelectTrigger>
+                <SelectContent>
+                  {activeAccounts.map((account: any) => (
+                    <SelectItem key={account.id} value={account.id}>
+                      <div className="flex items-center justify-between gap-4 w-full">
+                        <span>{account.name}</span>
+                        <span className="text-muted-foreground text-xs ml-2">
+                          {formatCurrency(Number(account.balance))}
+                        </span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {depositAccountId && (
+              <div className="rounded-md bg-muted p-3 text-sm space-y-1">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Saldo atual:</span>
+                  <span>{formatCurrency(Number(activeAccounts.find((a: any) => a.id === depositAccountId)?.balance || 0))}</span>
+                </div>
+                {depositValue && !isNaN(parseFloat(depositValue)) && parseFloat(depositValue) > 0 && (
+                  <div className="flex justify-between font-medium">
+                    <span className="text-muted-foreground">Saldo após depósito:</span>
+                    <span className={Number(activeAccounts.find((a: any) => a.id === depositAccountId)?.balance || 0) - parseFloat(depositValue) < 0 ? 'text-destructive' : ''}>
+                      {formatCurrency(Number(activeAccounts.find((a: any) => a.id === depositAccountId)?.balance || 0) - parseFloat(depositValue))}
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <Button className="w-full" onClick={handleDeposit} disabled={depositLoading}>
+              {depositLoading ? 'Depositando...' : 'Confirmar depósito'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
