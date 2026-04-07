@@ -58,7 +58,7 @@ serve(async (req: any) => {
       })
     }
 
-    // LOCK: Marcar imediatamente como 'sent' para evitar que execuções 
+    // LOCK: Marcar imediatamente como 'sent' para evitar que execuções
     // paralelas (overlaps de cron) processem as mesmas notificações.
     const notificationIds = notifications.map((n: any) => n.id);
     await supabaseClient
@@ -81,7 +81,7 @@ serve(async (req: any) => {
 
     for (const notification of notifications) {
       const userSubs = (subsData || []).filter((s: any) => s.user_id === notification.user_id)
-      
+
       const payload = JSON.stringify({
         title: notification.title,
         body: notification.description,
@@ -90,10 +90,10 @@ serve(async (req: any) => {
 
       if (userSubs.length === 0) {
         dbOps.push(
-          supabaseClient.from('notifications').update({ 
-            status: 'failed', 
+          supabaseClient.from('notifications').update({
+            status: 'failed',
             description: notification.description + '\n\n[AVISO]: Nenhum dispositivo push encontrado.',
-            updated_at: new Date().toISOString() 
+            updated_at: new Date().toISOString()
           }).eq('id', notification.id)
         );
         continue;
@@ -113,7 +113,7 @@ serve(async (req: any) => {
           await webPush.sendNotification(pushSubscription, payload);
         } catch (err: any) {
           console.error(`Erro envio push para ${sub.endpoint}:`, err);
-          
+
           // Se o erro for 404 (Not Found) ou 410 (Gone), a inscrição é inválida.
           // Devemos removê-la para não tentar mais e não gerar duplicidade no futuro.
           if (err.statusCode === 404 || err.statusCode === 410) {
@@ -127,22 +127,26 @@ serve(async (req: any) => {
 
       if (!allSuccessfullySent) {
         dbOps.push(
-          supabaseClient.from('notifications').update({ 
-            status: 'failed', 
+          supabaseClient.from('notifications').update({
+            status: 'failed',
             description: notification.description + '\n\n[FALHA PARCIAL]: ' + lastErrorMessage,
-            updated_at: new Date().toISOString() 
+            updated_at: new Date().toISOString()
           }).eq('id', notification.id)
         );
       } else {
         // Sucesso total ou dispositivos limpos => Tratar recorrência
         const recurrence = notification.recurrence || 'none';
         if (recurrence !== 'none') {
-          const nextDate = calculateNextDate(new Date(notification.scheduled_for), recurrence);
+          const nextDate = calculateNextDate(
+            new Date(notification.scheduled_for),
+            recurrence,
+            notification.weekdays_config
+          );
           dbOps.push(
-            supabaseClient.from('notifications').update({ 
+            supabaseClient.from('notifications').update({
               status: 'pending',
               scheduled_for: nextDate.toISOString(),
-              updated_at: new Date().toISOString() 
+              updated_at: new Date().toISOString()
             }).eq('id', notification.id)
           );
         }
@@ -167,25 +171,46 @@ serve(async (req: any) => {
   }
 })
 
-function calculateNextDate(current: Date, recurrence: string): Date {
+function calculateNextDate(current: Date, recurrence: string, weekdaysConfig?: string | null): Date {
   const nextDate = new Date(current);
   switch (recurrence) {
     case 'daily':
+      // Avança exatamente 1 dia (todos os dias)
       nextDate.setDate(nextDate.getDate() + 1);
       break;
-    case 'weekdays':
+    case 'weekdays': {
+      // Avança para o próximo dia da semana que esteja na lista de dias configurados
+      let selectedDays: number[] = [];
+      if (weekdaysConfig) {
+        try {
+          selectedDays = JSON.parse(weekdaysConfig).map(Number);
+        } catch {
+          selectedDays = [];
+        }
+      }
+      if (selectedDays.length === 0) {
+        // Fallback: avança 1 dia se não houver dias configurados
+        nextDate.setDate(nextDate.getDate() + 1);
+        break;
+      }
+      // Avança até encontrar um dia da semana que esteja na lista
       do {
         nextDate.setDate(nextDate.getDate() + 1);
-      } while (nextDate.getDay() === 0 || nextDate.getDay() === 6);
+      } while (!selectedDays.includes(nextDate.getDay()));
       break;
-    case 'weekly':
-      nextDate.setDate(nextDate.getDate() + 7);
-      break;
-    case 'monthly':
+    }
+    case 'monthly': {
+      // Avança 1 mês mantendo o mesmo dia do mês
+      const originalDay = current.getDate();
       nextDate.setMonth(nextDate.getMonth() + 1);
+      // Ajuste para meses com menos dias (ex: 31 de jan -> 28/29 de fev)
+      // setMonth já normaliza automaticamente, mas garantimos o dia máximo do mês
+      const maxDay = new Date(nextDate.getFullYear(), nextDate.getMonth() + 1, 0).getDate();
+      nextDate.setDate(Math.min(originalDay, maxDay));
       break;
-    case 'yearly':
-      nextDate.setFullYear(nextDate.getFullYear() + 1);
+    }
+    default:
+      // Recorrências não reconhecidas: não avança
       break;
   }
   return nextDate;

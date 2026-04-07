@@ -20,10 +20,18 @@ type NotificationFormProps = {
 const recurrenceOptions = [
   { value: 'none', label: 'Não repetir' },
   { value: 'daily', label: 'Diariamente' },
-  { value: 'weekdays', label: 'Dias da semana' },
-  { value: 'weekly', label: 'Semanalmente' },
+  { value: 'weekdays', label: 'Dias da Semana' },
   { value: 'monthly', label: 'Mensalmente' },
-  { value: 'yearly', label: 'Anualmente' },
+];
+
+const WEEK_DAYS = [
+  { value: '0', label: 'Dom' },
+  { value: '1', label: 'Seg' },
+  { value: '2', label: 'Ter' },
+  { value: '3', label: 'Qua' },
+  { value: '4', label: 'Qui' },
+  { value: '5', label: 'Sex' },
+  { value: '6', label: 'Sáb' },
 ];
 
 export const NotificationForm = ({ open, onOpenChange, onSuccess, editingNotification }: NotificationFormProps) => {
@@ -32,6 +40,7 @@ export const NotificationForm = ({ open, onOpenChange, onSuccess, editingNotific
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
   const [recurrence, setRecurrence] = useState("none");
+  const [selectedWeekdays, setSelectedWeekdays] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const { session } = useAuth();
 
@@ -40,29 +49,55 @@ export const NotificationForm = ({ open, onOpenChange, onSuccess, editingNotific
       setTitle(editingNotification.title);
       setDescription(editingNotification.description);
       const scheduledDate = new Date(editingNotification.scheduled_for);
-      
+
       const year = scheduledDate.getFullYear();
       const month = String(scheduledDate.getMonth() + 1).padStart(2, '0');
       const day = String(scheduledDate.getDate()).padStart(2, '0');
       setDate(`${year}-${month}-${day}`);
-      
+
       const hours = String(scheduledDate.getHours()).padStart(2, '0');
       const minutes = String(scheduledDate.getMinutes()).padStart(2, '0');
       setTime(`${hours}:${minutes}`);
-      setRecurrence(editingNotification.recurrence || "none");
+
+      // Mapear recorrências legadas (weekly/yearly) para 'none'
+      const rec = editingNotification.recurrence || "none";
+      setRecurrence(['weekly', 'yearly'].includes(rec) ? 'none' : rec);
+
+      // Carregar dias da semana salvos
+      if (editingNotification.weekdays_config) {
+        try {
+          setSelectedWeekdays(JSON.parse(editingNotification.weekdays_config));
+        } catch {
+          setSelectedWeekdays([]);
+        }
+      } else {
+        setSelectedWeekdays([]);
+      }
     } else {
       setTitle("");
       setDescription("");
       setDate("");
       setTime("");
       setRecurrence("none");
+      setSelectedWeekdays([]);
     }
   }, [editingNotification, open]);
+
+  const toggleWeekday = (val: string) => {
+    setSelectedWeekdays(prev =>
+      prev.includes(val) ? prev.filter(d => d !== val) : [...prev, val]
+    );
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title || !description || !date || !time) {
       toast.error("Por favor, preencha todos os campos.");
+      return;
+    }
+
+    if (recurrence === 'weekdays' && selectedWeekdays.length === 0) {
+      toast.error("Selecione pelo menos um dia da semana.");
       return;
     }
 
@@ -78,9 +113,13 @@ export const NotificationForm = ({ open, onOpenChange, onSuccess, editingNotific
 
     try {
       const scheduled_for = scheduledDateObj.toISOString();
-      const bodyArgs = editingNotification 
-        ? { title, description, scheduled_for, status: 'pending', recurrence }
-        : { title, description, scheduled_for, status: 'pending', recurrence, user_id: session?.user?.id };
+      const weekdays_config = recurrence === 'weekdays'
+        ? JSON.stringify(selectedWeekdays.sort())
+        : null;
+
+      const bodyArgs = editingNotification
+        ? { title, description, scheduled_for, status: 'pending', recurrence, weekdays_config }
+        : { title, description, scheduled_for, status: 'pending', recurrence, weekdays_config, user_id: session?.user?.id };
 
       let submitError = null;
 
@@ -164,11 +203,18 @@ export const NotificationForm = ({ open, onOpenChange, onSuccess, editingNotific
               />
             </div>
           </div>
+
           <div className="space-y-2">
             <Label htmlFor="recurrence" className="flex items-center gap-1.5">
               <Repeat className="h-3.5 w-3.5" /> Repetir
             </Label>
-            <Select value={recurrence} onValueChange={setRecurrence}>
+            <Select
+              value={recurrence}
+              onValueChange={(val) => {
+                setRecurrence(val);
+                if (val !== 'weekdays') setSelectedWeekdays([]);
+              }}
+            >
               <SelectTrigger id="recurrence">
                 <SelectValue placeholder="Selecione a recorrência" />
               </SelectTrigger>
@@ -181,6 +227,39 @@ export const NotificationForm = ({ open, onOpenChange, onSuccess, editingNotific
               </SelectContent>
             </Select>
           </div>
+
+          {recurrence === 'weekdays' && (
+            <div className="space-y-2">
+              <Label className="text-sm text-muted-foreground">Selecione os dias da semana</Label>
+              <div className="flex flex-wrap gap-2 pt-1">
+                {WEEK_DAYS.map((d) => {
+                  const isSelected = selectedWeekdays.includes(d.value);
+                  return (
+                    <button
+                      key={d.value}
+                      type="button"
+                      onClick={() => toggleWeekday(d.value)}
+                      className={[
+                        'w-10 h-10 rounded-full text-sm font-medium border transition-colors',
+                        isSelected
+                          ? 'bg-primary text-primary-foreground border-primary'
+                          : 'bg-background text-foreground border-border hover:border-primary hover:text-primary',
+                      ].join(' ')}
+                    >
+                      {d.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {recurrence === 'monthly' && (
+            <p className="text-xs text-muted-foreground">
+              A notificação será repetida todo mês no mesmo dia da data selecionada.
+            </p>
+          )}
+
           <DialogFooter className="pt-4">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
               Cancelar

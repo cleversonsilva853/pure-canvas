@@ -19,16 +19,39 @@ type Notification = {
   scheduled_for: string;
   status: string;
   recurrence?: string;
+  weekdays_config?: string;
 };
 
-const recurrenceLabels: Record<string, string> = {
+const recurrenceBaseLabels: Record<string, string> = {
   none: '',
   daily: 'Diariamente',
-  weekdays: 'Dias da semana',
-  weekly: 'Semanalmente',
+  weekdays: 'Dias da Semana',
   monthly: 'Mensalmente',
-  yearly: 'Anualmente',
 };
+
+const WEEK_DAY_NAMES: Record<string, string> = {
+  '0': 'Dom',
+  '1': 'Seg',
+  '2': 'Ter',
+  '3': 'Qua',
+  '4': 'Qui',
+  '5': 'Sex',
+  '6': 'Sáb',
+};
+
+function getRecurrenceLabel(n: Notification): string {
+  if (!n.recurrence || n.recurrence === 'none') return '';
+  if (n.recurrence === 'weekdays' && n.weekdays_config) {
+    try {
+      const days: string[] = JSON.parse(n.weekdays_config);
+      const names = days.sort().map(d => WEEK_DAY_NAMES[d]).filter(Boolean);
+      if (names.length > 0) return names.join(', ');
+    } catch {
+      // fallback
+    }
+  }
+  return recurrenceBaseLabels[n.recurrence] || n.recurrence;
+}
 
 export default function Notifications() {
   const [formOpen, setFormOpen] = useState(false);
@@ -44,7 +67,7 @@ export default function Notifications() {
         .from('notifications' as any)
         .select('*')
         .order('scheduled_for', { ascending: true });
-        
+
       if (error) throw error;
       return data as any as Notification[];
     }
@@ -56,7 +79,7 @@ export default function Notifications() {
         .from('notifications' as any)
         .delete()
         .eq('id', id);
-        
+
       if (error) throw error;
       return data;
     },
@@ -176,7 +199,7 @@ export default function Notifications() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {notifications.map((n) => {
             const scheduledDate = new Date(n.scheduled_for);
-            const isPending = n.status === 'pending';
+            const recurrenceLabel = getRecurrenceLabel(n);
 
             return (
               <Card key={n.id} className="overflow-hidden transition-all hover:shadow-md border border-border/50">
@@ -194,22 +217,22 @@ export default function Notifications() {
                       <span className="text-sm font-medium">
                         {format(scheduledDate, "dd 'de' MMMM 'às' HH:mm", { locale: ptBR })}
                       </span>
-                      {n.recurrence && n.recurrence !== 'none' && (
+                      {recurrenceLabel && (
                         <span className="text-xs text-primary flex items-center gap-1 mt-0.5">
                           <Repeat className="h-3 w-3" />
-                          {recurrenceLabels[n.recurrence] || n.recurrence}
+                          {recurrenceLabel}
                         </span>
                       )}
                     </div>
-                    
+
                     <div className="flex gap-1">
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" onClick={() => handleEdit(n)}>
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => handleDelete(n.id)} disabled={deleteMutation.isPending}>
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" onClick={() => handleEdit(n)}>
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => handleDelete(n.id)} disabled={deleteMutation.isPending}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -218,9 +241,9 @@ export default function Notifications() {
         </div>
       )}
 
-      <NotificationForm 
-        open={formOpen} 
-        onOpenChange={setFormOpen} 
+      <NotificationForm
+        open={formOpen}
+        onOpenChange={setFormOpen}
         onSuccess={() => queryClient.invalidateQueries({ queryKey: ['notifications'] })}
         editingNotification={editingNotification}
       />
