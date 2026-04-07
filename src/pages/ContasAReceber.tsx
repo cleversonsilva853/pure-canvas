@@ -8,10 +8,20 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useContasAReceber, useCreateContaAReceber, useUpdateContaAReceber, useDeleteContaAReceber } from '@/hooks/useContasAReceber';
+import { useAccounts } from '@/hooks/useFinanceData';
+import { useBusinessAccounts } from '@/hooks/useBusinessData';
+import { supabase } from '@/integrations/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 
 const ContasAReceber = () => {
   const { data: contas = [], isLoading } = useContasAReceber();
+  const { data: personalAccounts = [] } = useAccounts();
+  const { data: businessAccounts = [] } = useBusinessAccounts();
+  const queryClient = useQueryClient();
+
   const createMutation = useCreateContaAReceber();
   const updateMutation = useUpdateContaAReceber();
   const deleteMutation = useDeleteContaAReceber();
@@ -22,6 +32,13 @@ const ContasAReceber = () => {
   const [startDate, setStartDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [dueDate, setDueDate] = useState('');
   const [observation, setObservation] = useState('');
+
+  // Receive modal states
+  const [receiveOpen, setReceiveOpen] = useState(false);
+  const [selectedReceiveId, setSelectedReceiveId] = useState<string | null>(null);
+  const [selectedReceiveAmount, setSelectedReceiveAmount] = useState<number>(0);
+  const [selectedAccountId, setSelectedAccountId] = useState('');
+  const [isReceiving, setIsReceiving] = useState(false);
 
   const resetForm = () => {
     setName('');
@@ -39,8 +56,58 @@ const ContasAReceber = () => {
     );
   };
 
-  const toggleReceived = (id: string, current: boolean) => {
-    updateMutation.mutate({ id, is_received: !current });
+  const handleReceiveConfirm = async () => {
+    if (!selectedAccountId || !selectedReceiveId) {
+      toast.error('Selecione uma conta de destino');
+      return;
+    }
+
+    setIsReceiving(true);
+    try {
+      let currentBalance = 0;
+      let tableName = '';
+      
+      const pAcc = personalAccounts.find(a => a.id === selectedAccountId);
+      if (pAcc) {
+        currentBalance = Number(pAcc.balance);
+        tableName = 'accounts';
+      } else {
+        const bAcc = businessAccounts.find(a => a.id === selectedAccountId);
+        if (bAcc) {
+          currentBalance = Number(bAcc.balance);
+          tableName = 'business_accounts';
+        } else {
+          throw new Error('Conta não encontrada');
+        }
+      }
+
+      // Update the balance
+      const newBalance = currentBalance + selectedReceiveAmount;
+      const { error: balanceError } = await supabase
+        .from(tableName)
+        .update({ balance: newBalance })
+        .eq('id', selectedAccountId);
+
+      if (balanceError) throw balanceError;
+
+      // Mark as received
+      updateMutation.mutate({ id: selectedReceiveId, is_received: true });
+
+      // Invalidate queries to refresh system balances
+      await queryClient.invalidateQueries({ queryKey: ['accounts'] });
+      await queryClient.invalidateQueries({ queryKey: ['business_accounts'] });
+
+      toast.success('Recebimento confirmado e saldo atualizado!');
+      setReceiveOpen(false);
+      setSelectedAccountId('');
+      setSelectedReceiveId(null);
+      setSelectedReceiveAmount(0);
+    } catch (error) {
+      console.error(error);
+      toast.error('Erro ao processar o recebimento');
+    } finally {
+      setIsReceiving(false);
+    }
   };
 
   const pendentes = contas.filter(c => !c.is_received);
@@ -95,6 +162,55 @@ const ContasAReceber = () => {
           </DialogContent>
         </Dialog>
       </div>
+
+      {/* Receive Modal */}
+      <Dialog open={receiveOpen} onOpenChange={setReceiveOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirmar Recebimento</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Selecione em qual conta este valor de <strong>R$ {selectedReceiveAmount.toFixed(2)}</strong> foi recebido:
+            </p>
+            <Select value={selectedAccountId} onValueChange={setSelectedAccountId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione a conta de destino" />
+              </SelectTrigger>
+              <SelectContent>
+                {businessAccounts.length > 0 && (
+                  <div className="px-2 py-1.5 text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+                    Contas Empresariais
+                  </div>
+                )}
+                {businessAccounts.map(acc => (
+                  <SelectItem key={acc.id} value={acc.id}>
+                    {acc.name} - R$ {Number(acc.balance).toFixed(2)}
+                  </SelectItem>
+                ))}
+                
+                {personalAccounts.length > 0 && (
+                  <div className="px-2 py-1.5 text-sm font-semibold text-muted-foreground uppercase tracking-wider mt-2 border-t">
+                    Contas Pessoais
+                  </div>
+                )}
+                {personalAccounts.map(acc => (
+                  <SelectItem key={acc.id} value={acc.id}>
+                    {acc.name} - R$ {Number(acc.balance).toFixed(2)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button 
+              className="w-full" 
+              onClick={handleReceiveConfirm} 
+              disabled={isReceiving || !selectedAccountId}
+            >
+              {isReceiving ? 'Processando...' : 'Confirmar e Atualizar Saldo'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Summary cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -155,7 +271,16 @@ const ContasAReceber = () => {
                       </div>
                       <p className="text-lg font-bold whitespace-nowrap">R$ {Number(c.amount).toFixed(2)}</p>
                       <div className="flex gap-1">
-                        <Button size="icon" variant="ghost" className="text-green-600 hover:text-green-700" onClick={() => toggleReceived(c.id, c.is_received)}>
+                        <Button 
+                          size="icon" 
+                          variant="ghost" 
+                          className="text-green-600 hover:text-green-700" 
+                          onClick={() => {
+                            setSelectedReceiveId(c.id);
+                            setSelectedReceiveAmount(Number(c.amount));
+                            setReceiveOpen(true);
+                          }}
+                        >
                           <CheckCircle2 className="h-5 w-5" />
                         </Button>
                         <Button size="icon" variant="ghost" className="text-destructive" onClick={() => deleteMutation.mutate(c.id)}>
@@ -189,7 +314,11 @@ const ContasAReceber = () => {
                       </div>
                       <p className="text-lg font-bold whitespace-nowrap line-through">R$ {Number(c.amount).toFixed(2)}</p>
                       <div className="flex gap-1">
-                        <Button size="icon" variant="ghost" onClick={() => toggleReceived(c.id, c.is_received)}>
+                        <Button 
+                          size="icon" 
+                          variant="ghost" 
+                          onClick={() => updateMutation.mutate({ id: c.id, is_received: false })}
+                        >
                           <X className="h-4 w-4" />
                         </Button>
                         <Button size="icon" variant="ghost" className="text-destructive" onClick={() => deleteMutation.mutate(c.id)}>
