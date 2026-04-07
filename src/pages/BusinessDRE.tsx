@@ -8,7 +8,10 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
-import { useBusinessSales, useBusinessExpenses, useBusinessProducts } from '@/hooks/useBusinessData';
+import { useBusinessSales, useBusinessExpenses, useBusinessProducts, useBusinessIngredients } from '@/hooks/useBusinessData';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { useQuery } from '@tanstack/react-query';
 import { 
   TrendingUp, TrendingDown, DollarSign, ShoppingBag, Receipt, Percent,
   AlertCircle, ArrowUpRight, ArrowDownRight, Download, FileText, FileSpreadsheet
@@ -23,6 +26,20 @@ const BusinessDRE = () => {
   const { data: sales = [] } = useBusinessSales();
   const { data: expenses = [] } = useBusinessExpenses();
   const { data: products = [] } = useBusinessProducts();
+  const { data: ingredients = [] } = useBusinessIngredients();
+  const { user } = useAuth();
+  
+  const { data: allCompositions = [] } = useQuery({
+    queryKey: ['business_product_compositions_all', user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('business_product_compositions')
+        .select('*');
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user
+  });
 
   const [month, setMonth] = useState(new Date().getMonth() + 1);
   const [year, setYear] = useState(new Date().getFullYear());
@@ -52,7 +69,17 @@ const BusinessDRE = () => {
       const cmv = periodSales.reduce((acc, s) => {
         if (!s.product_id) return acc;
         const product = products.find(p => p.id === s.product_id);
-        return acc + (Number(s.quantity) * Number(product?.cost_price || 0));
+        const prodComps = allCompositions.filter(c => c.product_id === s.product_id);
+        let calculatedCost = 0;
+        prodComps.forEach(c => {
+           const ing = ingredients.find(i => i.id === c.ingredient_id);
+           if (ing && Number(ing.purchase_quantity) > 0) {
+             const costPerUnit = Number(ing.purchase_price) / (Number(ing.purchase_quantity) * (ing.unit === 'KG' ? 1000 : 1));
+             calculatedCost += costPerUnit * Number(c.quantity);
+           }
+        });
+        const finalCost = calculatedCost > 0 ? calculatedCost : Number(product?.cost_price || 0);
+        return acc + (Number(s.quantity) * finalCost);
       }, 0);
       const operatingExpenses = periodExpenses.reduce((acc, e) => acc + Number(e.amount), 0);
       const grossProfit = revenue - cmv;
@@ -85,7 +112,17 @@ const BusinessDRE = () => {
       existing.qty += Number(s.quantity);
       if (s.product_id) {
         const product = products.find(p => p.id === s.product_id);
-        existing.cost += Number(s.quantity) * Number(product?.cost_price || 0);
+        const prodComps = allCompositions.filter(c => c.product_id === s.product_id);
+        let calculatedCost = 0;
+        prodComps.forEach(c => {
+           const ing = ingredients.find(i => i.id === c.ingredient_id);
+           if (ing && Number(ing.purchase_quantity) > 0) {
+             const costPerUnit = Number(ing.purchase_price) / (Number(ing.purchase_quantity) * (ing.unit === 'KG' ? 1000 : 1));
+             calculatedCost += costPerUnit * Number(c.quantity);
+           }
+        });
+        const finalCost = calculatedCost > 0 ? calculatedCost : Number(product?.cost_price || 0);
+        existing.cost += Number(s.quantity) * finalCost;
       }
       productDataMap.set(pName, existing);
     });
@@ -101,7 +138,7 @@ const BusinessDRE = () => {
       .sort((a, b) => b.revenue - a.revenue);
 
     return { current, previous, expenseByCategory, productBreakdown };
-  }, [sales, expenses, products, month, year, taxRate]);
+  }, [sales, expenses, products, ingredients, allCompositions, month, year, taxRate]);
 
   const { current, previous, expenseByCategory, productBreakdown } = dreData;
 
