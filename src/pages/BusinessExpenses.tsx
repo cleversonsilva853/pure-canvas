@@ -247,7 +247,7 @@ const BusinessExpenses = () => {
         <CardContent>
           {isLoading ? <p className="text-muted-foreground text-sm">Carregando...</p> : filteredExpenses.length === 0 ? <p className="text-muted-foreground text-sm">Nenhuma despesa encontrada.</p> : (
             <Table>
-              <TableHeader><TableRow><TableHead>Nome</TableHead><TableHead>Categoria</TableHead><TableHead>Valor</TableHead><TableHead>Data</TableHead><TableHead></TableHead></TableRow></TableHeader>
+              <TableHeader><TableRow><TableHead>Nome</TableHead><TableHead>Categoria</TableHead><TableHead>Valor</TableHead><TableHead>Data</TableHead><TableHead>Observação</TableHead><TableHead></TableHead></TableRow></TableHeader>
               <TableBody>
                 {filteredExpenses.map(e => (
                   <TableRow key={e.id}>
@@ -255,6 +255,7 @@ const BusinessExpenses = () => {
                     <TableCell>{e.category}</TableCell>
                     <TableCell>{fmt(Number(e.amount))}</TableCell>
                     <TableCell>{formatDate(e.date)}</TableCell>
+                    <TableCell className="text-muted-foreground max-w-[200px] truncate" title={e.observation || ''}>{e.observation || '-'}</TableCell>
                     <TableCell><Button variant="ghost" size="icon" onClick={() => deleteExpense.mutate(e.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button></TableCell>
                   </TableRow>
                 ))}
