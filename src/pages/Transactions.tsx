@@ -286,10 +286,14 @@ const Transactions = () => {
                       )}
                     </div>
                     <div>
-                      <p className="text-sm font-medium">{t.description || 'Sem descrição'}</p>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-sm font-medium">
+                        {(t.category as { name?: string } | null)?.name || 'Sem categoria'}
+                      </p>
+                      {t.description && (
+                        <p className="text-xs text-foreground/70 mt-0.5">{t.description}</p>
+                      )}
+                      <p className="text-xs text-muted-foreground mt-0.5">
                         {formatDate(t.date)}
-                        {(t.category as { name?: string } | null)?.name ? ` • ${(t.category as { name: string }).name}` : ''}
                         {(t.account as { name?: string } | null)?.name ? ` • ${(t.account as { name: string }).name}` : ''}
                         {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                         {(t as unknown as { card?: { name: string } }).card?.name ? ` • 💳 ${(t as unknown as { card: { name: string } }).card.name}` : ''}
