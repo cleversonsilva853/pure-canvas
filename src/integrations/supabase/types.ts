@@ -455,6 +455,45 @@ export type Database = {
           },
         ]
       }
+      contas_a_receber: {
+        Row: {
+          amount: number
+          created_at: string
+          due_date: string
+          id: string
+          is_received: boolean
+          name: string
+          observation: string | null
+          start_date: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          due_date: string
+          id?: string
+          is_received?: boolean
+          name: string
+          observation?: string | null
+          start_date?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          due_date?: string
+          id?: string
+          is_received?: boolean
+          name?: string
+          observation?: string | null
+          start_date?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       couple_members: {
         Row: {
           couple_id: string
