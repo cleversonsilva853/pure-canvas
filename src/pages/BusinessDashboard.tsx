@@ -36,7 +36,7 @@ const BusinessDashboard = () => {
       return true;
     };
 
-    const filteredExpenses = expenses.filter(e => filterFn(e.date));
+    const filteredExpenses = expenses.filter(e => filterFn(e.date) && e.date <= today);
     const filteredSales = sales.filter(s => filterFn(s.date));
 
     const periodExpenses = filteredExpenses.reduce((s, e) => s + Number(e.amount), 0);
@@ -48,7 +48,7 @@ const BusinessDashboard = () => {
     
     const monthlyExpenses = expenses.filter(e => { 
       const [y, m] = e.date.split('-').map(Number);
-      return (m - 1) === currentMonth && y === currentYear; 
+      return (m - 1) === currentMonth && y === currentYear && e.date <= today; 
     }).reduce((s, e) => s + Number(e.amount), 0);
     
     const monthlySales = sales.filter(e => { 
@@ -59,7 +59,7 @@ const BusinessDashboard = () => {
     const periodProfit = periodSales - periodExpenses;
     const dailyProfit = dailySales - dailyExpenses;
     const monthlyProfit = monthlySales - monthlyExpenses;
-    const totalProfit = sales.reduce((s, e) => s + Number(e.total_price), 0) - expenses.reduce((s, e) => s + Number(e.amount), 0);
+    const totalProfit = sales.reduce((s, e) => s + Number(e.total_price), 0) - expenses.filter(e => e.date <= today).reduce((s, e) => s + Number(e.amount), 0);
     const margin = periodSales > 0 ? (periodProfit / periodSales) * 100 : 0;
 
     return { 
@@ -94,7 +94,7 @@ const BusinessDashboard = () => {
     expenses.forEach(e => { 
       const [y, m] = e.date.split('-').map(Number);
       const k = `${y}-${m - 1}`; 
-      if (months[k]) months[k].despesas += Number(e.amount); 
+      if (months[k] && e.date <= today) months[k].despesas += Number(e.amount); 
     });
     return Object.values(months);
   }, [expenses, sales, currentMonth, currentYear]);

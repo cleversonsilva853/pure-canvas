@@ -55,7 +55,7 @@ const BusinessExpenses = () => {
   }, [expenses, filterMonth, filterYear, searchTerm]);
 
   const dailyTotal = useMemo(() => expenses.filter(e => e.date === today).reduce((s, e) => s + Number(e.amount), 0), [expenses, today]);
-  const filteredTotal = useMemo(() => filteredExpenses.reduce((s, e) => s + Number(e.amount), 0), [filteredExpenses]);
+  const filteredTotal = useMemo(() => filteredExpenses.filter(e => e.date <= today).reduce((s, e) => s + Number(e.amount), 0), [filteredExpenses, today]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

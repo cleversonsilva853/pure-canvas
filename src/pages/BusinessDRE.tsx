@@ -12,6 +12,7 @@ import { useBusinessSales, useBusinessExpenses, useBusinessProducts, useBusiness
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
+import { getTodayInputDate } from '@/lib/utils';
 import { 
   TrendingUp, TrendingDown, DollarSign, ShoppingBag, Receipt, Percent,
   AlertCircle, ArrowUpRight, ArrowDownRight, Download, FileText, FileSpreadsheet
@@ -53,7 +54,7 @@ const BusinessDRE = () => {
 
     const currentExpenses = expenses.filter(e => {
       const d = new Date(e.date);
-      return d.getMonth() + 1 === month && d.getFullYear() === year;
+      return d.getMonth() + 1 === month && d.getFullYear() === year && e.date <= getTodayInputDate();
     });
 
     const prevMonth = month === 1 ? 12 : month - 1;
