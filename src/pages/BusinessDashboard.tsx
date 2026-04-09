@@ -87,15 +87,15 @@ const BusinessDashboard = () => {
     const monthlySales = monthlySalesList.reduce((s, e) => s + Number(e.total_price), 0);
     const monthlyCMV = calcCMV(monthlySalesList);
 
-    // Profit = Sales - Expenses - CMV
-    const periodProfit = periodSales - periodExpenses - periodCMV;
-    const dailyProfit = dailySales - dailyExpenses - dailyCMV;
-    const monthlyProfit = monthlySales - monthlyExpenses - monthlyCMV;
+    // Profit = Sales - CMV
+    const periodProfit = periodSales - periodCMV;
+    const dailyProfit = dailySales - dailyCMV;
+    const monthlyProfit = monthlySales - monthlyCMV;
     
     const allSales = sales.reduce((s, e) => s + Number(e.total_price), 0);
     const allExpenses = expenses.filter(e => e.date <= today).reduce((s, e) => s + Number(e.amount), 0);
     const allCMV = calcCMV(sales);
-    const totalProfit = allSales - allExpenses - allCMV;
+    const totalProfit = allSales - allCMV;
     
     const totalCosts = periodExpenses + periodCMV;
     const margin = periodSales > 0 ? (periodProfit / periodSales) * 100 : 0;
