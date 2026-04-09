@@ -2,16 +2,20 @@ import { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useBusinessExpenses, useBusinessSales, useBusinessAccounts } from '@/hooks/useBusinessData';
-import { DollarSign, TrendingDown, TrendingUp, Percent, Wallet, Calendar } from 'lucide-react';
+import { DollarSign, TrendingDown, TrendingUp, Percent, Wallet, Calendar as CalendarIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { getTodayInputDate } from '@/lib/utils';
-import { subDays, isAfter, parseISO, startOfMonth, startOfToday } from 'date-fns';
+import { subDays, isAfter, parseISO, startOfMonth, startOfToday, format, isSameDay } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
 
 const fmt = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
 
 const BusinessDashboard = () => {
-  const [activePeriod, setActivePeriod] = useState<'day' | 'week' | 'month'>('month');
+  const [activePeriod, setActivePeriod] = useState<'day' | 'week' | 'month'>('day');
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const { data: expenses = [] } = useBusinessExpenses();
   const { data: sales = [] } = useBusinessSales();
   const { data: accounts = [] } = useBusinessAccounts();
@@ -19,6 +23,7 @@ const BusinessDashboard = () => {
   const today = getTodayInputDate();
   const currentMonth = new Date().getMonth();
   const currentYear = new Date().getFullYear();
+  const selectedDateStr = format(selectedDate, 'yyyy-MM-dd');
 
   const stats = useMemo(() => {
     const todayDate = startOfToday();
@@ -27,7 +32,7 @@ const BusinessDashboard = () => {
 
     const filterFn = (dateStr: string) => {
       const itemDate = parseISO(dateStr);
-      if (activePeriod === 'day') return dateStr === today;
+      if (activePeriod === 'day') return dateStr === selectedDateStr;
       if (activePeriod === 'week') return isAfter(itemDate, sevenDaysAgo);
       if (activePeriod === 'month') {
         const [y, m] = dateStr.split('-').map(Number);
@@ -76,7 +81,7 @@ const BusinessDashboard = () => {
       totalProfit,
       margin 
     };
-  }, [expenses, sales, accounts, today, currentMonth, currentYear, activePeriod]);
+  }, [expenses, sales, accounts, today, currentMonth, currentYear, activePeriod, selectedDateStr]);
 
   const chartData = useMemo(() => {
     const months: Record<string, { name: string; vendas: number; despesas: number }> = {};
@@ -101,9 +106,9 @@ const BusinessDashboard = () => {
 
   const cards = [
     { title: 'Saldo em Contas', value: fmt(stats.totalBalance), icon: Wallet, color: 'text-primary' },
-    { title: 'Faturamento ' + (activePeriod === 'day' ? 'Hoje' : activePeriod === 'week' ? 'Semana' : 'Mês'), value: fmt(stats.periodSales), icon: DollarSign, color: 'text-emerald-500' },
-    { title: 'Despesas ' + (activePeriod === 'day' ? 'Hoje' : activePeriod === 'week' ? 'Semana' : 'Mês'), value: fmt(stats.periodExpenses), icon: TrendingDown, color: 'text-red-500' },
-    { title: 'Lucro ' + (activePeriod === 'day' ? 'Hoje' : activePeriod === 'week' ? 'Semana' : 'Mês'), value: fmt(stats.periodProfit), icon: TrendingUp, color: stats.periodProfit >= 0 ? 'text-emerald-500' : 'text-red-500' },
+    { title: 'Faturamento ' + (activePeriod === 'day' ? (isSameDay(selectedDate, new Date()) ? 'Hoje' : format(selectedDate, 'dd/MM')) : activePeriod === 'week' ? 'Semana' : 'Mês'), value: fmt(stats.periodSales), icon: DollarSign, color: 'text-emerald-500' },
+    { title: 'Despesas ' + (activePeriod === 'day' ? (isSameDay(selectedDate, new Date()) ? 'Hoje' : format(selectedDate, 'dd/MM')) : activePeriod === 'week' ? 'Semana' : 'Mês'), value: fmt(stats.periodExpenses), icon: TrendingDown, color: 'text-red-500' },
+    { title: 'Lucro ' + (activePeriod === 'day' ? (isSameDay(selectedDate, new Date()) ? 'Hoje' : format(selectedDate, 'dd/MM')) : activePeriod === 'week' ? 'Semana' : 'Mês'), value: fmt(stats.periodProfit), icon: TrendingUp, color: stats.periodProfit >= 0 ? 'text-emerald-500' : 'text-red-500' },
     { title: 'Margem de Lucro', value: `${stats.margin.toFixed(1)}%`, icon: Percent, color: 'text-primary' },
   ];
 
@@ -113,19 +118,36 @@ const BusinessDashboard = () => {
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold">Financeiro Empresa</h1>
           <div className="p-2 rounded-xl bg-secondary/50 flex items-center gap-2 text-xs font-medium text-muted-foreground">
-            <Calendar className="h-3.5 w-3.5" />
-            {activePeriod === 'day' ? 'Hoje' : activePeriod === 'week' ? 'Últimos 7 dias' : 'Este Mês'}
+            <CalendarIcon className="h-3.5 w-3.5" />
+            {activePeriod === 'day' ? (isSameDay(selectedDate, new Date()) ? 'Hoje' : format(selectedDate, "dd 'de' MMM", { locale: ptBR })) : activePeriod === 'week' ? 'Últimos 7 dias' : 'Este Mês'}
           </div>
         </div>
 
         <Tabs 
-          defaultValue="month" 
+          defaultValue="day" 
           value={activePeriod} 
           onValueChange={(v) => setActivePeriod(v as any)} 
           className="w-full"
         >
           <TabsList className="grid w-full grid-cols-3 bg-muted/50 p-1 h-12 rounded-xl">
-            <TabsTrigger value="day" className="rounded-lg">Dia</TabsTrigger>
+            <Popover>
+              <PopoverTrigger asChild>
+                <TabsTrigger value="day" className="rounded-lg" onClick={() => setActivePeriod('day')}>
+                  {activePeriod === 'day' && !isSameDay(selectedDate, new Date()) ? format(selectedDate, 'dd/MM') : 'Dia'}
+                </TabsTrigger>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={selectedDate}
+                  onSelect={(date) => {
+                    if (date) setSelectedDate(date);
+                  }}
+                  initialFocus
+                  locale={ptBR}
+                />
+              </PopoverContent>
+            </Popover>
             <TabsTrigger value="week" className="rounded-lg">Semana</TabsTrigger>
             <TabsTrigger value="month" className="rounded-lg">Mês</TabsTrigger>
           </TabsList>
