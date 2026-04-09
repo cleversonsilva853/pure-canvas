@@ -9,11 +9,15 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useBusinessExpenses, useCreateBusinessExpense, useDeleteBusinessExpense, useBusinessExpenseCategories, useCreateBusinessExpenseCategory, useUpdateBusinessExpenseCategory, useDeleteBusinessExpenseCategory } from '@/hooks/useBusinessData';
-import { Plus, Trash2, Search, Filter, Download, FileText, FileSpreadsheet, Pencil, Tag } from 'lucide-react';
+import { Plus, Trash2, Search, Filter, Download, FileText, FileSpreadsheet, Pencil, Tag, CalendarIcon } from 'lucide-react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { formatDate, getTodayInputDate } from '@/lib/utils';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 const fmt = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
 
@@ -34,6 +38,7 @@ const BusinessExpenses = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterMonth, setFilterMonth] = useState<string>(String(new Date().getMonth()));
   const [filterYear, setFilterYear] = useState<string>(String(new Date().getFullYear()));
+  const [filterDate, setFilterDate] = useState<Date | undefined>();
   const [newCatName, setNewCatName] = useState('');
   const [editingCat, setEditingCat] = useState<{ id: string; name: string } | null>(null);
 
@@ -50,9 +55,10 @@ const BusinessExpenses = () => {
       const matchMonth = filterMonth === 'all' || elMonth === filterMonth;
       const matchYear = filterYear === 'all' || elYear === filterYear;
       const matchSearch = !searchTerm || e.name.toLowerCase().includes(searchTerm.toLowerCase());
-      return matchMonth && matchYear && matchSearch;
+      const matchDate = !filterDate || e.date === format(filterDate, 'yyyy-MM-dd');
+      return matchMonth && matchYear && matchSearch && matchDate;
     });
-  }, [expenses, filterMonth, filterYear, searchTerm]);
+  }, [expenses, filterMonth, filterYear, searchTerm, filterDate]);
 
   const dailyTotal = useMemo(() => expenses.filter(e => e.date === today).reduce((s, e) => s + Number(e.amount), 0), [expenses, today]);
   const filteredTotal = useMemo(() => filteredExpenses.filter(e => e.date <= today).reduce((s, e) => s + Number(e.amount), 0), [filteredExpenses, today]);
@@ -209,11 +215,41 @@ const BusinessExpenses = () => {
         <Card><CardContent className="p-4 text-center"><p className="text-sm text-muted-foreground">Total Filtrado</p><p className="text-xl font-bold">{fmt(filteredTotal)}</p></CardContent></Card>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-3">
+      <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Buscar despesas..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10" />
+          <Input placeholder="Buscar despesas..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10 min-w-[200px]" />
         </div>
+        
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="outline" className={`w-full sm:w-[150px] justify-start text-left font-normal ${!filterDate && "text-muted-foreground"}`}>
+              <CalendarIcon className="mr-2 h-4 w-4" />
+              {filterDate ? format(filterDate, 'dd/MM/yyyy') : <span>Filtrar por Dia</span>}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="start">
+            <Calendar
+              mode="single"
+              selected={filterDate}
+              onSelect={date => {
+                setFilterDate(date);
+                if (date) {
+                  setFilterMonth('all');
+                  setFilterYear('all');
+                }
+              }}
+              initialFocus
+              locale={ptBR}
+            />
+            {filterDate && (
+              <div className="p-2 border-t">
+                <Button variant="ghost" className="w-full text-xs" onClick={() => setFilterDate(undefined)}>Remover filtro de dia</Button>
+              </div>
+            )}
+          </PopoverContent>
+        </Popover>
+
         <Select value={filterMonth} onValueChange={setFilterMonth}>
           <SelectTrigger className="w-full sm:w-[160px]">
             <Filter className="h-4 w-4 mr-2" />
