@@ -324,6 +324,7 @@ export const useUpdateProductComposition = () => {
     },
     onSuccess: (_, { productId }) => {
       qc.invalidateQueries({ queryKey: ['business_product_compositions', productId] });
+      qc.invalidateQueries({ queryKey: ['business_product_compositions_all'] });
       toast({ title: 'Ficha técnica atualizada!' });
     },
     onError: () => toast({ title: 'Erro ao atualizar ficha técnica', variant: 'destructive' }),
