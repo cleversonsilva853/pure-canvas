@@ -288,6 +288,24 @@ export const useBusinessProductCompositions = (productId?: string) => {
   });
 };
 
+export const useAllBusinessProductCompositions = () => {
+  const { user } = useAuth();
+  const ownerId = useBusinessOwnerId();
+
+  return useQuery({
+    queryKey: ['business_product_compositions_all', ownerId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('business_product_compositions')
+        .select('*');
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user && !!ownerId,
+  });
+};
+
 export const useUpdateProductComposition = () => {
   const qc = useQueryClient();
   const { toast } = useToast();
@@ -306,6 +324,7 @@ export const useUpdateProductComposition = () => {
     },
     onSuccess: (_, { productId }) => {
       qc.invalidateQueries({ queryKey: ['business_product_compositions', productId] });
+      qc.invalidateQueries({ queryKey: ['business_product_compositions_all'] });
       toast({ title: 'Ficha técnica atualizada!' });
     },
     onError: () => toast({ title: 'Erro ao atualizar ficha técnica', variant: 'destructive' }),

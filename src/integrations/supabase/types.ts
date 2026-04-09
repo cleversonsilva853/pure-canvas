@@ -148,6 +148,84 @@ export type Database = {
         }
         Relationships: []
       }
+      business_contas_a_pagar: {
+        Row: {
+          amount: number
+          created_at: string | null
+          due_date: string
+          id: string
+          is_paid: boolean | null
+          name: string
+          observation: string | null
+          start_date: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          due_date: string
+          id?: string
+          is_paid?: boolean | null
+          name: string
+          observation?: string | null
+          start_date: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          due_date?: string
+          id?: string
+          is_paid?: boolean | null
+          name?: string
+          observation?: string | null
+          start_date?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      business_contas_a_receber: {
+        Row: {
+          amount: number
+          created_at: string | null
+          due_date: string
+          id: string
+          is_received: boolean | null
+          name: string
+          observation: string | null
+          start_date: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          due_date: string
+          id?: string
+          is_received?: boolean | null
+          name: string
+          observation?: string | null
+          start_date: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          due_date?: string
+          id?: string
+          is_received?: boolean | null
+          name?: string
+          observation?: string | null
+          start_date?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       business_expense_categories: {
         Row: {
           created_at: string
@@ -476,7 +554,7 @@ export type Database = {
           is_paid?: boolean
           name: string
           observation?: string | null
-          start_date?: string
+          start_date: string
           updated_at?: string
           user_id: string
         }
@@ -658,6 +736,7 @@ export type Database = {
       }
       notifications: {
         Row: {
+          context: string | null
           created_at: string
           description: string
           id: string
@@ -667,8 +746,10 @@ export type Database = {
           title: string
           updated_at: string
           user_id: string
+          weekdays_config: string | null
         }
         Insert: {
+          context?: string | null
           created_at?: string
           description: string
           id?: string
@@ -678,8 +759,10 @@ export type Database = {
           title: string
           updated_at?: string
           user_id: string
+          weekdays_config?: string | null
         }
         Update: {
+          context?: string | null
           created_at?: string
           description?: string
           id?: string
@@ -689,6 +772,7 @@ export type Database = {
           title?: string
           updated_at?: string
           user_id?: string
+          weekdays_config?: string | null
         }
         Relationships: []
       }
