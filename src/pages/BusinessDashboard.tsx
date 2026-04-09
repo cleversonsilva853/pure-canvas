@@ -1,12 +1,20 @@
 import { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useBusinessExpenses, useBusinessSales, useBusinessAccounts, useBusinessProducts } from '@/hooks/useBusinessData';
+import {
+  useAllBusinessProductCompositions,
+  useBusinessAccounts,
+  useBusinessExpenses,
+  useBusinessIngredients,
+  useBusinessProducts,
+  useBusinessSales,
+} from '@/hooks/useBusinessData';
 import { DollarSign, TrendingDown, TrendingUp, Percent, Wallet, Calendar, Package } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { getTodayInputDate } from '@/lib/utils';
-import { subDays, isAfter, parseISO, startOfMonth, startOfToday } from 'date-fns';
+import { calculateBusinessSalesCost, buildBusinessProductUnitCostMap } from '@/lib/business-costs';
+import { subDays, isAfter, parseISO, startOfToday } from 'date-fns';
 
 const fmt = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
 
@@ -16,25 +24,22 @@ const BusinessDashboard = () => {
   const { data: sales = [] } = useBusinessSales();
   const { data: accounts = [] } = useBusinessAccounts();
   const { data: products = [] } = useBusinessProducts();
+  const { data: ingredients = [] } = useBusinessIngredients();
+  const { data: allCompositions = [] } = useAllBusinessProductCompositions();
 
   const today = getTodayInputDate();
   const currentMonth = new Date().getMonth();
   const currentYear = new Date().getFullYear();
 
-  // Build a map of product_id -> cost_price for CMV calculation
   const productCostMap = useMemo(() => {
-    const map: Record<string, number> = {};
-    products.forEach(p => { map[p.id] = Number(p.cost_price); });
-    return map;
-  }, [products]);
+    return buildBusinessProductUnitCostMap({
+      products,
+      ingredients,
+      compositions: allCompositions,
+    });
+  }, [products, ingredients, allCompositions]);
 
-  // Calculate CMV (Custo de Mercadoria Vendida) for a list of sales
-  const calcCMV = (salesList: typeof sales) => {
-    return salesList.reduce((sum, s) => {
-      const costPrice = s.product_id ? (productCostMap[s.product_id] || 0) : 0;
-      return sum + (costPrice * Number(s.quantity));
-    }, 0);
-  };
+  const calcCMV = (salesList: typeof sales) => calculateBusinessSalesCost(salesList, productCostMap);
 
   const stats = useMemo(() => {
     const todayDate = startOfToday();
@@ -133,7 +138,7 @@ const BusinessDashboard = () => {
       if (months[k] && e.date <= today) months[k].despesas += Number(e.amount); 
     });
     return Object.values(months);
-  }, [expenses, sales, currentMonth, currentYear, productCostMap]);
+  }, [expenses, sales, currentMonth, currentYear, productCostMap, today]);
 
   const periodLabel = activePeriod === 'day' ? 'Hoje' : activePeriod === 'week' ? 'Semana' : 'Mês';
 
