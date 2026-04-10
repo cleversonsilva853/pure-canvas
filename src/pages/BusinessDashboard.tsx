@@ -214,21 +214,7 @@ const BusinessDashboard = () => {
         ))}
       </div>
 
-      {/* Profit breakdown */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {[
-          { label: 'Lucro Hoje', value: fmt(stats.dailyProfit) },
-          { label: 'Lucro Mensal', value: fmt(stats.monthlyProfit) },
-          { label: 'Lucro Total', value: fmt(stats.totalProfit) },
-        ].map(item => (
-          <Card key={item.label}>
-            <CardContent className="p-4 text-center">
-              <p className="text-sm text-muted-foreground">{item.label}</p>
-              <p className="text-xl font-bold mt-1">{item.value}</p>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+
 
       {/* Chart */}
       <Card>
