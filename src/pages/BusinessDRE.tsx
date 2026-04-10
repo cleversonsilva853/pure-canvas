@@ -52,7 +52,7 @@ const BusinessDRE = () => {
 
     const currentExpenses = expenses.filter(e => {
       const d = new Date(e.date);
-      return d.getMonth() + 1 === month && d.getFullYear() === year && e.date <= getTodayInputDate();
+      return d.getMonth() + 1 === month && d.getFullYear() === year;
     });
 
     const prevMonth = month === 1 ? 12 : month - 1;
@@ -65,14 +65,15 @@ const BusinessDRE = () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const calculateMetrics = (periodSales: any[], periodExpenses: any[]) => {
       const revenue = periodSales.reduce((acc, s) => acc + Number(s.total_price), 0);
+      const taxes = revenue > 0 ? revenue * (taxRate / 100) : 0;
+      const netRevenue = revenue - taxes;
       const cmv = calculateBusinessSalesCost(periodSales, productUnitCostMap);
       const operatingExpenses = periodExpenses.reduce((acc, e) => acc + Number(e.amount), 0);
-      const grossProfit = revenue - cmv;
+      const grossProfit = netRevenue - cmv;
       const operatingProfit = grossProfit - operatingExpenses;
-      const taxes = operatingProfit > 0 ? operatingProfit * (taxRate / 100) : 0;
-      const netProfit = operatingProfit - taxes;
+      const netProfit = operatingProfit;
       const margin = revenue > 0 ? (netProfit / revenue) * 100 : 0;
-      return { revenue, cmv, grossProfit, operatingExpenses, operatingProfit, taxes, netProfit, margin };
+      return { revenue, taxes, netRevenue, cmv, grossProfit, operatingExpenses, operatingProfit, netProfit, margin };
     };
 
     const current = calculateMetrics(currentSales, currentExpenses);
@@ -118,7 +119,9 @@ const BusinessDRE = () => {
   const { current, previous, expenseByCategory, productBreakdown } = dreData;
 
   const chartData = [
-    { name: 'Receita', valor: current.revenue, color: '#10b981' },
+    { name: 'R. Bruta', valor: current.revenue, color: '#10b981' },
+    { name: 'Impostos', valor: current.taxes, color: '#f87171' },
+    { name: 'R. Líquida', valor: current.netRevenue, color: '#059669' },
     { name: 'CMV', valor: current.cmv, color: '#f59e0b' },
     { name: 'Despesas', valor: current.operatingExpenses, color: '#ef4444' },
     { name: 'Lucro Líq.', valor: current.netProfit, color: '#3b82f6' },
@@ -137,12 +140,12 @@ const BusinessDRE = () => {
 
     const tableData = [
       ['1. Receita Bruta (Vendas)', fmt(current.revenue)],
+      [`(-) Deduções e Impostos (${taxRate}%)`, `(${fmt(current.taxes)})`],
+      ['2. (=) Receita Líquida', fmt(current.netRevenue)],
       ['(-) Custo das Mercadorias Vendidas (CMV)', `(${fmt(current.cmv)})`],
       ['3. (=) Lucro Bruto', fmt(current.grossProfit)],
       ['(-) Despesas Operacionais', `(${fmt(current.operatingExpenses)})`],
-      ['5. (=) Lucro Operacional (EBITDA)', fmt(current.operatingProfit)],
-      [`(-) Impostos e Taxas (${taxRate}%)`, `(${fmt(current.taxes)})`],
-      ['7. (=) Resultado Líquido do Período', fmt(current.netProfit)],
+      ['4. (=) Resultado Líquido do Período', fmt(current.netProfit)],
     ];
 
     autoTable(doc, {
@@ -196,12 +199,12 @@ const BusinessDRE = () => {
     const dreRows = [
       ['Descrição', 'Valor (R$)'],
       ['1. Receita Bruta (Vendas)', current.revenue],
+      [`(-) Deduções e Impostos (${taxRate}%)`, -current.taxes],
+      ['2. (=) Receita Líquida', current.netRevenue],
       ['(-) CMV', -current.cmv],
       ['3. (=) Lucro Bruto', current.grossProfit],
       ['(-) Despesas Operacionais', -current.operatingExpenses],
-      ['5. (=) Lucro Operacional (EBITDA)', current.operatingProfit],
-      [`(-) Impostos e Taxas (${taxRate}%)`, -current.taxes],
-      ['7. (=) Resultado Líquido', current.netProfit],
+      ['4. (=) Resultado Líquido do Período', current.netProfit],
     ];
     const wsDRE = XLSX.utils.aoa_to_sheet(dreRows);
     XLSX.utils.book_append_sheet(wb, wsDRE, 'DRE');
@@ -330,6 +333,20 @@ const BusinessDRE = () => {
                   <TableCell>1. Receita Bruta (Vendas)</TableCell>
                   <TableCell className="text-right text-emerald-600">{fmt(current.revenue)}</TableCell>
                 </TableRow>
+                <TableRow className="group">
+                  <TableCell className="pl-6 flex items-center gap-2 border-b-0 h-[49px]">
+                    (-) Deduções/Impostos s/ Venda
+                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Input type="number" className="h-6 w-12 text-xs p-1" value={taxRate || ""} onChange={e => setTaxRate(Number(e.target.value))} />
+                      <span className="text-[10px]">%</span>
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-right text-red-500">({fmt(current.taxes)})</TableCell>
+                </TableRow>
+                <TableRow className="font-bold border-t-2">
+                  <TableCell>2. (=) Receita Líquida</TableCell>
+                  <TableCell className="text-right text-emerald-600">{fmt(current.netRevenue)}</TableCell>
+                </TableRow>
                 <TableRow>
                   <TableCell className="pl-6">(-) Custo das Mercadorias Vendidas (CMV)</TableCell>
                   <TableCell className="text-right text-red-500">({fmt(current.cmv)})</TableCell>
@@ -342,22 +359,8 @@ const BusinessDRE = () => {
                   <TableCell className="pl-6">(-) Despesas Operacionais</TableCell>
                   <TableCell className="text-right text-red-500">({fmt(current.operatingExpenses)})</TableCell>
                 </TableRow>
-                <TableRow className="font-bold border-t-2">
-                  <TableCell>5. (=) Lucro Operacional (EBITDA)</TableCell>
-                  <TableCell className="text-right">{fmt(current.operatingProfit)}</TableCell>
-                </TableRow>
-                <TableRow className="flex items-center gap-2 group">
-                  <TableCell className="pl-6 flex items-center gap-2">
-                    (-) Impostos e Taxas
-                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Input type="number" className="h-6 w-12 text-xs p-1" value={taxRate} onChange={e => setTaxRate(Number(e.target.value))} />
-                      <span className="text-[10px]">%</span>
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-right text-red-500 flex-1">({fmt(current.taxes)})</TableCell>
-                </TableRow>
                 <TableRow className={`font-bold border-t-2 text-lg ${current.netProfit >= 0 ? 'bg-emerald-500/10 text-emerald-700' : 'bg-red-500/10 text-red-700'}`}>
-                  <TableCell>7. (=) Resultado Líquido do Período</TableCell>
+                  <TableCell>4. (=) Resultado Líquido do Período</TableCell>
                   <TableCell className="text-right">{fmt(current.netProfit)}</TableCell>
                 </TableRow>
               </TableBody>
