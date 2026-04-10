@@ -173,10 +173,14 @@ serve(async (req: any) => {
 
 function calculateNextDate(current: Date, recurrence: string, weekdaysConfig?: string | null): Date {
   const nextDate = new Date(current);
+  const now = new Date(); // referencial atual para garantir data no futuro
+  
   switch (recurrence) {
     case 'daily':
-      // Avança exatamente 1 dia (todos os dias)
-      nextDate.setDate(nextDate.getDate() + 1);
+      do {
+        // Avança exatamente 1 dia (todos os dias)
+        nextDate.setDate(nextDate.getDate() + 1);
+      } while (nextDate <= now);
       break;
     case 'weekdays': {
       // Avança para o próximo dia da semana que esteja na lista de dias configurados
@@ -190,23 +194,26 @@ function calculateNextDate(current: Date, recurrence: string, weekdaysConfig?: s
       }
       if (selectedDays.length === 0) {
         // Fallback: avança 1 dia se não houver dias configurados
-        nextDate.setDate(nextDate.getDate() + 1);
+        do {
+          nextDate.setDate(nextDate.getDate() + 1);
+        } while (nextDate <= now);
         break;
       }
-      // Avança até encontrar um dia da semana que esteja na lista
+      // Avança até encontrar um dia da semana que esteja na lista E seja no futuro
       do {
         nextDate.setDate(nextDate.getDate() + 1);
-      } while (!selectedDays.includes(nextDate.getDay()));
+      } while (!selectedDays.includes(nextDate.getDay()) || nextDate <= now);
       break;
     }
     case 'monthly': {
       // Avança 1 mês mantendo o mesmo dia do mês
       const originalDay = current.getDate();
-      nextDate.setMonth(nextDate.getMonth() + 1);
-      // Ajuste para meses com menos dias (ex: 31 de jan -> 28/29 de fev)
-      // setMonth já normaliza automaticamente, mas garantimos o dia máximo do mês
-      const maxDay = new Date(nextDate.getFullYear(), nextDate.getMonth() + 1, 0).getDate();
-      nextDate.setDate(Math.min(originalDay, maxDay));
+      do {
+        nextDate.setMonth(nextDate.getMonth() + 1);
+        // Ajuste para meses com menos dias (ex: 31 de jan -> 28/29 de fev)
+        const maxDay = new Date(nextDate.getFullYear(), nextDate.getMonth() + 1, 0).getDate();
+        nextDate.setDate(Math.min(originalDay, maxDay));
+      } while (nextDate <= now);
       break;
     }
     default:
