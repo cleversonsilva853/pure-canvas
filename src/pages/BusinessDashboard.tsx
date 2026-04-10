@@ -150,10 +150,10 @@ const BusinessDashboard = () => {
   const cards = [
     { title: 'Saldo em Contas', value: fmt(stats.totalBalance), icon: Wallet, color: 'text-primary' },
     { title: `Faturamento ${periodLabel}`, value: fmt(stats.periodSales), icon: DollarSign, color: 'text-emerald-500' },
-    { title: `Despesas ${periodLabel}`, value: fmt(stats.periodExpenses), icon: TrendingDown, color: 'text-red-500' },
-    { title: `Custo Produtos ${periodLabel}`, value: fmt(stats.periodCMV), icon: Package, color: 'text-orange-500' },
     { title: `Lucro ${periodLabel}`, value: fmt(stats.periodProfit), icon: TrendingUp, color: stats.periodProfit >= 0 ? 'text-emerald-500' : 'text-red-500' },
     { title: 'Margem de Lucro', value: `${stats.margin.toFixed(1)}%`, icon: Percent, color: 'text-primary' },
+    { title: `Custo Produtos ${periodLabel}`, value: fmt(stats.periodCMV), icon: Package, color: 'text-orange-500' },
+    { title: `Despesas ${periodLabel}`, value: fmt(stats.periodExpenses), icon: TrendingDown, color: 'text-red-500' },
   ];
 
   return (
@@ -198,7 +198,7 @@ const BusinessDashboard = () => {
         </Tabs>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-4">
         {cards.map((c, i) => (
           <motion.div key={c.title} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
             <Card>
