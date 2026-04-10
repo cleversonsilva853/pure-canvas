@@ -174,7 +174,7 @@ serve(async (req: any) => {
 function calculateNextDate(current: Date, recurrence: string, weekdaysConfig?: string | null): Date {
   const nextDate = new Date(current);
   const now = new Date(); // referencial atual para garantir data no futuro
-  
+
   switch (recurrence) {
     case 'daily':
       do {
