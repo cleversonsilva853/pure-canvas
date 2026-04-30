@@ -2,11 +2,11 @@
 /**
  * export-via-postgres.mjs
  * ============================================================
- * Exporta dados do Supabase conectando DIRETAMENTE no PostgreSQL
- * (porta 5432), SEM usar a REST API — contorna o erro 522.
+ * Exporta dados conectando DIRETAMENTE no PostgreSQL
+ * (porta 5432), SEM usar REST API.
  *
  * COMO USAR:
- *   1. Obtenha a senha do banco no Supabase:
+ *   1. Obtenha a senha do banco original:
  *      Dashboard → Settings → Database → Database password → "Reveal"
  *   2. Cole a senha na variável DB_PASSWORD abaixo
  *   3. Instale a dependência: npm install pg
@@ -19,8 +19,8 @@ const { Client } = pkg;
 import { writeFileSync } from 'fs';
 
 // ─── CONFIGURAÇÃO ────────────────────────────────────────────
-const DB_PASSWORD = 'COLE_AQUI_A_SENHA_DO_BANCO'; // ← Supabase → Settings → Database → "Reveal"
-const DB_HOST     = 'db.oaxylfbcnshpkuiymsmv.supabase.co';
+const DB_PASSWORD = 'COLE_AQUI_A_SENHA_DO_BANCO'; // ← Configurações → Database → "Reveal"
+const DB_HOST     = 'db.original-server.co';
 const DB_NAME     = 'postgres';
 const DB_USER     = 'postgres';
 const DB_PORT     = 5432;
@@ -79,7 +79,7 @@ function rowToInsert(table, row) {
 async function main() {
   if (DB_PASSWORD === 'COLE_AQUI_A_SENHA_DO_BANCO') {
     console.error('\n❌ Preencha DB_PASSWORD no script!');
-    console.error('   Supabase Dashboard → Settings → Database → "Database password" → Reveal\n');
+    console.error('   Dashboard → Settings → Database → "Database password" → Reveal\n');
     process.exit(1);
   }
 
@@ -89,7 +89,7 @@ async function main() {
     user:     DB_USER,
     password: DB_PASSWORD,
     port:     DB_PORT,
-    ssl:      { rejectUnauthorized: false }, // necessário para Supabase
+    ssl:      { rejectUnauthorized: false }, // necessário para conexão remota
   });
 
   console.log('🔌 Conectando ao banco de dados...');
@@ -103,7 +103,7 @@ async function main() {
 
   const lines = [];
   lines.push('-- ==========================================================');
-  lines.push('-- InforControl — Dados exportados do Supabase (via PostgreSQL)');
+  lines.push('-- InforControl — Dados exportados (via PostgreSQL)');
   lines.push(`-- Gerado em: ${new Date().toISOString()}`);
   lines.push('-- Execute APÓS o schema.sql');
   lines.push('-- ==========================================================');
@@ -159,7 +159,7 @@ async function main() {
       );
 
       if (!checkRes.rows[0].exists) {
-        console.log(` ⚠️  Tabela não encontrada no Supabase (skip)`);
+        console.log(` ⚠️  Tabela não encontrada no banco original (skip)`);
         continue;
       }
 
@@ -195,13 +195,13 @@ async function main() {
   lines.push(`-- Total de registros exportados: ${totalRows}`);
 
   const output = lines.join('\n');
-  writeFileSync('supabase_export_data.sql', output, 'utf8');
+  writeFileSync('migration_export_data.sql', output, 'utf8');
 
   console.log('\n✅ Exportação concluída!');
   console.log(`   📁 Arquivo gerado: supabase_export_data.sql`);
   console.log(`   📊 Total de registros: ${totalRows}`);
   console.log('\n💡 Dica: Os usuários foram exportados do schema auth.users.');
-  console.log('   As senhas criptografadas do Supabase devem funcionar se forem BCrypt.\n');
+  console.log('   As senhas criptografadas originais devem funcionar se forem BCrypt.\n');
 }
 
 main().catch(err => {

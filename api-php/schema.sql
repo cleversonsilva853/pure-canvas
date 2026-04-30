@@ -1,6 +1,6 @@
 -- ==========================================================
 -- InforControl — Schema MySQL
--- Migração: Supabase (PostgreSQL) → MySQL (HostGator)
+-- Migração: PostgreSQL → MySQL (HostGator)
 -- Gerado automaticamente. Execute no phpMyAdmin ou MySQL CLI.
 -- ==========================================================
 
@@ -9,7 +9,7 @@ SET NAMES utf8mb4;
 SET CHARACTER SET utf8mb4;
 
 -- ----------------------------------------------------------
--- TABELA: users (substitui o Supabase Auth)
+-- TABELA: users (substitui o Auth anterior)
 -- ----------------------------------------------------------
 CREATE TABLE IF NOT EXISTS users (
   id            VARCHAR(36)  NOT NULL PRIMARY KEY,
@@ -410,8 +410,7 @@ CREATE TABLE IF NOT EXISTS business_contas_a_receber (
 SET FOREIGN_KEY_CHECKS = 1;
 
 -- ==========================================================
--- PROCEDURE AUXILIAR: get_business_owner_id
--- Equivalente à função SQL do Supabase
+-- Equivalente à função SQL anterior
 -- ==========================================================
 DELIMITER $$
 CREATE PROCEDURE IF NOT EXISTS get_business_owner_id(IN p_user_id VARCHAR(36), OUT p_owner_id VARCHAR(36))
