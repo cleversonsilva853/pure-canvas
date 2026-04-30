@@ -63,40 +63,65 @@ if ($method === 'POST') {
   $items = isset($body[0]) && is_array($body[0]) ? $body : [$body];
   $results = [];
 
-  foreach ($items as $item) {
-    require_fields($item, ['amount', 'date', 'type']);
-    $newId = generateUUID();
-    $stmt = $db->prepare('
-      INSERT INTO transactions (id, user_id, account_id, category_id, credit_card_id, parent_transaction_id,
-        context_id, context_type, type, amount, description, date, is_paid, is_recurring,
-        recurrence_type, installment_number, total_installments, paid_by)
-      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
-    ');
-    $stmt->execute([
-      $newId, $userId,
-      $item['account_id']            ?? null,
-      $item['category_id']           ?? null,
-      $item['credit_card_id']        ?? null,
-      $item['parent_transaction_id'] ?? null,
-      $item['context_id']            ?? null,
-      $item['context_type']          ?? null,
-      $item['type'],
-      $item['amount'],
-      $item['description']           ?? null,
-      $item['date'],
-      isset($item['is_paid'])        ? (int)$item['is_paid']        : 1,
-      isset($item['is_recurring'])   ? (int)$item['is_recurring']   : 0,
-      $item['recurrence_type']       ?? null,
-      $item['installment_number']    ?? null,
-      $item['total_installments']    ?? null,
-      $item['paid_by']               ?? null,
-    ]);
-    $stmt2 = $db->prepare('SELECT * FROM transactions WHERE id = ?');
-    $stmt2->execute([$newId]);
-    $results[] = $stmt2->fetch();
+  try {
+    $db->beginTransaction();
+
+    foreach ($items as $item) {
+      require_fields($item, ['amount', 'date', 'type']);
+      $newId = generateUUID();
+      $amount = (float)$item['amount'];
+      $accId = $item['account_id'] ?? null;
+      $cardId = $item['credit_card_id'] ?? null;
+      $type = $item['type']; // income ou expense
+
+      $stmt = $db->prepare('
+        INSERT INTO transactions (id, user_id, account_id, category_id, credit_card_id, parent_transaction_id,
+          context_id, context_type, type, amount, description, date, is_paid, is_recurring,
+          recurrence_type, installment_number, total_installments, paid_by)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+      ');
+      $stmt->execute([
+        $newId, $userId,
+        $accId,
+        $item['category_id']           ?? null,
+        $cardId,
+        $item['parent_transaction_id'] ?? null,
+        $item['context_id']            ?? null,
+        $item['context_type']          ?? null,
+        $type,
+        $amount,
+        $item['description']           ?? null,
+        $item['date'],
+        isset($item['is_paid'])        ? (int)$item['is_paid']        : 1,
+        isset($item['is_recurring'])   ? (int)$item['is_recurring']   : 0,
+        $item['recurrence_type']       ?? null,
+        $item['installment_number']    ?? null,
+        $item['total_installments']    ?? null,
+        $item['paid_by']               ?? null,
+      ]);
+
+      // Atualizar saldo da conta apenas se NÃO usar cartão de crédito
+      if ($accId && (!$cardId || $cardId === 'none')) {
+        $sqlAcc = ($type === 'income') 
+          ? 'UPDATE accounts SET balance = balance + ? WHERE id = ? AND user_id = ?'
+          : 'UPDATE accounts SET balance = balance - ? WHERE id = ? AND user_id = ?';
+        
+        $stmtAcc = $db->prepare($sqlAcc);
+        $stmtAcc->execute([$amount, $accId, $userId]);
+      }
+
+      $stmt2 = $db->prepare('SELECT * FROM transactions WHERE id = ?');
+      $stmt2->execute([$newId]);
+      $results[] = $stmt2->fetch();
+    }
+
+    $db->commit();
+    jsonResponse(count($results) === 1 && !isset($body[0]) ? $results[0] : $results, 201);
+
+  } catch (Exception $e) {
+    $db->rollBack();
+    jsonResponse(['error' => 'Erro ao processar transação: ' . $e->getMessage()], 500);
   }
-  
-  jsonResponse(count($results) === 1 && !isset($body[0]) ? $results[0] : $results, 201);
 }
 
 if ($method === 'PUT' && $id) {

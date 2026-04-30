@@ -61,7 +61,7 @@ const BusinessDashboard = () => {
       return true;
     };
 
-    const filteredExpenses = expenses.filter(e => filterFn(e.date) && e.date <= today);
+    const filteredExpenses = expenses.filter(e => filterFn(e.date));
     const filteredSales = sales.filter(s => filterFn(s.date));
 
     const periodExpenses = filteredExpenses.reduce((s, e) => s + Number(e.amount), 0);
@@ -82,20 +82,20 @@ const BusinessDashboard = () => {
     });
     const monthlyExpenses = expenses.filter(e => { 
       const [y, m] = e.date.split('-').map(Number);
-      return (m - 1) === currentMonth && y === currentYear && e.date <= today; 
+      return (m - 1) === currentMonth && y === currentYear; 
     }).reduce((s, e) => s + Number(e.amount), 0);
     const monthlySales = monthlySalesList.reduce((s, e) => s + Number(e.total_price), 0);
     const monthlyCMV = calcCMV(monthlySalesList);
 
-    // Profit = Sales - CMV
-    const periodProfit = periodSales - periodCMV;
-    const dailyProfit = dailySales - dailyCMV;
-    const monthlyProfit = monthlySales - monthlyCMV;
+    // Profit = Sales - CMV - Expenses (Lucro Líquido)
+    const periodProfit = periodSales - periodCMV - periodExpenses;
+    const dailyProfit = dailySales - dailyCMV - dailyExpenses;
+    const monthlyProfit = monthlySales - monthlyCMV - monthlyExpenses;
     
     const allSales = sales.reduce((s, e) => s + Number(e.total_price), 0);
-    const allExpenses = expenses.filter(e => e.date <= today).reduce((s, e) => s + Number(e.amount), 0);
+    const allExpenses = expenses.reduce((s, e) => s + Number(e.amount), 0);
     const allCMV = calcCMV(sales);
-    const totalProfit = allSales - allCMV;
+    const totalProfit = allSales - allCMV - allExpenses;
     
     const totalCosts = periodExpenses + periodCMV;
     const margin = periodSales > 0 ? (periodProfit / periodSales) * 100 : 0;
@@ -140,7 +140,7 @@ const BusinessDashboard = () => {
     expenses.forEach(e => { 
       const [y, m] = e.date.split('-').map(Number);
       const k = `${y}-${m - 1}`; 
-      if (months[k] && e.date <= today) months[k].despesas += Number(e.amount); 
+      if (months[k]) months[k].despesas += Number(e.amount); 
     });
     return Object.values(months);
   }, [expenses, sales, currentMonth, currentYear, productCostMap, today]);

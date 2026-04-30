@@ -5,12 +5,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { useTransactions, useAccounts, useCategories, useBudgets, useCreditCards } from '@/hooks/useFinanceData';
+import { useTransactions, useAccounts, useCategories, useBudgets, useCreditCards, useCreateTransaction, useDeleteTransaction } from '@/hooks/useFinanceData';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
-import { useQueryClient } from '@tanstack/react-query';
-import { toast } from 'sonner';
-import { Plus, TrendingUp, TrendingDown, Search, Filter, Trash2 } from 'lucide-react';
+import { Plus, TrendingUp, TrendingDown, Search, Filter, Trash2, Calendar as CalendarIcon } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { formatDate, getTodayInputDate } from '@/lib/utils';
 
@@ -19,16 +16,19 @@ const formatCurrency = (value: number) =>
 
 const Transactions = () => {
   const { user } = useAuth();
-  const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<string>('all');
+  const [filterMonth, setFilterMonth] = useState<number>(new Date().getMonth() + 1);
+  const [filterYear, setFilterYear] = useState<number>(new Date().getFullYear());
 
-  const { data: transactions = [], isLoading } = useTransactions();
+  const { data: transactions = [], isLoading } = useTransactions(filterMonth, filterYear);
   const { data: accounts = [] } = useAccounts();
   const { data: categories = [] } = useCategories();
-  const { data: budgets = [] } = useBudgets();
+  const { data: budgets = [] } = useBudgets(filterMonth, filterYear);
   const { data: creditCards = [] } = useCreditCards();
+  const createTransaction = useCreateTransaction();
+  const deleteTransaction = useDeleteTransaction();
 
   // Form state
   const [type, setType] = useState<string>('expense');
@@ -38,13 +38,11 @@ const Transactions = () => {
   const [categoryId, setCategoryId] = useState('');
   const [accountId, setAccountId] = useState('');
   const [creditCardId, setCreditCardId] = useState('');
-  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
 
-    // Check budget if it's an expense
     if (type === 'expense' && categoryId) {
       const budget = budgets.find(b => b.category_id === categoryId);
       if (budget) {
@@ -60,52 +58,24 @@ const Transactions = () => {
       }
     }
 
-    setLoading(true);
+    await createTransaction.mutateAsync({
+      type,
+      amount: parseFloat(amount),
+      description,
+      date,
+      category_id: categoryId || null,
+      account_id: accountId || null,
+      credit_card_id: creditCardId && creditCardId !== 'none' ? creditCardId : null,
+      is_paid: !creditCardId || creditCardId === 'none',
+    });
 
-    try {
-      const { error } = await supabase.from('transactions').insert({
-        user_id: user.id,
-        type,
-        amount: parseFloat(amount),
-        description,
-        date,
-        category_id: categoryId || null,
-        account_id: accountId || null,
-        credit_card_id: creditCardId && creditCardId !== 'none' ? creditCardId : null,
-        is_paid: !creditCardId || creditCardId === 'none',
-      });
-      if (error) throw error;
-
-      // Update account balance only if NOT using credit card
-      if (accountId && !creditCardId) {
-        const account = accounts.find(a => a.id === accountId);
-        if (account) {
-          const newBalance = type === 'income'
-            ? Number(account.balance) + parseFloat(amount)
-            : Number(account.balance) - parseFloat(amount);
-          await supabase.from('accounts').update({ balance: newBalance }).eq('id', accountId);
-        }
-      }
-
-      toast.success('Transação adicionada!');
-      queryClient.invalidateQueries({ queryKey: ['transactions'] });
-      queryClient.invalidateQueries({ queryKey: ['accounts'] });
-      setDialogOpen(false);
-      resetForm();
-    } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Erro ao salvar');
-    } finally {
-      setLoading(false);
-    }
+    setDialogOpen(false);
+    resetForm();
   };
 
-  const handleDelete = async (id: string) => {
-    const { error } = await supabase.from('transactions').delete().eq('id', id);
-    if (error) {
-      toast.error('Erro ao excluir');
-    } else {
-      toast.success('Transação excluída');
-      queryClient.invalidateQueries({ queryKey: ['transactions'] });
+  const handleDelete = (id: string) => {
+    if (window.confirm('Deseja excluir esta transação?')) {
+      deleteTransaction.mutate(id);
     }
   };
 
@@ -226,15 +196,14 @@ const Transactions = () => {
                   </p>
                 </div>
               )}
-              <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? 'Salvando...' : 'Salvar'}
+              <Button type="submit" className="w-full" disabled={createTransaction.isPending}>
+                {createTransaction.isPending ? 'Salvando...' : 'Salvar'}
               </Button>
             </form>
           </DialogContent>
         </Dialog>
       </div>
 
-      {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -245,20 +214,47 @@ const Transactions = () => {
             className="pl-10"
           />
         </div>
-        <Select value={filterType} onValueChange={setFilterType}>
-          <SelectTrigger className="w-full sm:w-40">
-            <Filter className="h-4 w-4 mr-2" />
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todas</SelectItem>
-            <SelectItem value="income">Receitas</SelectItem>
-            <SelectItem value="expense">Despesas</SelectItem>
-          </SelectContent>
-        </Select>
+        
+        <div className="flex gap-2">
+          <Select value={String(filterMonth)} onValueChange={(v) => setFilterMonth(Number(v))}>
+            <SelectTrigger className="w-32">
+              <CalendarIcon className="h-4 w-4 mr-2" />
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {Array.from({ length: 12 }).map((_, i) => (
+                <SelectItem key={i + 1} value={String(i + 1)}>
+                  {new Date(0, i).toLocaleString('pt-BR', { month: 'long' })}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select value={String(filterYear)} onValueChange={(v) => setFilterYear(Number(v))}>
+            <SelectTrigger className="w-24">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {[2024, 2025, 2026].map(y => (
+                <SelectItem key={y} value={String(y)}>{y}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select value={filterType} onValueChange={setFilterType}>
+            <SelectTrigger className="w-32">
+              <Filter className="h-4 w-4 mr-2" />
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas</SelectItem>
+              <SelectItem value="income">Receitas</SelectItem>
+              <SelectItem value="expense">Despesas</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
-      {/* Transactions List */}
       <Card>
         <CardContent className="p-0">
           {isLoading ? (
@@ -295,8 +291,7 @@ const Transactions = () => {
                       <p className="text-xs text-muted-foreground mt-0.5">
                         {formatDate(t.date)}
                         {(t.account as { name?: string } | null)?.name ? ` • ${(t.account as { name: string }).name}` : ''}
-                        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                        {(t as unknown as { card?: { name: string } }).card?.name ? ` • 💳 ${(t as unknown as { card: { name: string } }).card.name}` : ''}
+                        {(t as any).card?.name ? ` • 💳 ${(t as any).card.name}` : ''}
                       </p>
                     </div>
                   </div>

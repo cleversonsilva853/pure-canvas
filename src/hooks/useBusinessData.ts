@@ -30,9 +30,13 @@ export const useCreateBusinessExpense = () => {
     mutationFn: (values: any) => api.post('/business/expenses', values),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['business_expenses'] });
+      qc.invalidateQueries({ queryKey: ['business_accounts'] });
       toast({ title: 'Despesa cadastrada!' });
     },
-    onError: () => toast({ title: 'Erro ao cadastrar despesa', variant: 'destructive' }),
+    onError: (error: any) => {
+      const msg = error.response?.data?.error || 'Erro ao cadastrar despesa';
+      toast({ title: msg, variant: 'destructive' });
+    },
   });
 };
 

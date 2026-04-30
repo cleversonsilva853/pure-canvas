@@ -1,6 +1,7 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
 
 export const useAccounts = () => {
   const { user } = useAuth();
@@ -39,6 +40,36 @@ export const useTransactions = (month?: number, year?: number) => {
     queryKey: ['transactions', user?.id, m, y],
     queryFn: () => api.get(`/transactions?month=${m}&year=${y}`),
     enabled: !!user,
+  });
+};
+
+export const useCreateTransaction = () => {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: (values: any) => api.post('/transactions', values),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['transactions'] });
+      qc.invalidateQueries({ queryKey: ['accounts'] });
+      toast({ title: 'Transação registrada!' });
+    },
+    onError: (error: any) => {
+      const msg = error.response?.data?.error || 'Erro ao registrar transação';
+      toast({ title: msg, variant: 'destructive' });
+    }
+  });
+};
+
+export const useDeleteTransaction = () => {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: (id: string) => api.delete(`/transactions/${id}`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['transactions'] });
+      qc.invalidateQueries({ queryKey: ['accounts'] });
+      toast({ title: 'Transação removida!' });
+    }
   });
 };
 

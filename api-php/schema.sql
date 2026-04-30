@@ -274,6 +274,7 @@ CREATE TABLE IF NOT EXISTS business_expense_categories (
 CREATE TABLE IF NOT EXISTS business_expenses (
   id          VARCHAR(36)   NOT NULL PRIMARY KEY,
   user_id     VARCHAR(36)   NOT NULL,
+  account_id  VARCHAR(36)   DEFAULT NULL,
   name        VARCHAR(255)  NOT NULL,
   category    VARCHAR(255)  NOT NULL DEFAULT 'geral',
   amount      DECIMAL(15,2) NOT NULL,
@@ -281,7 +282,8 @@ CREATE TABLE IF NOT EXISTS business_expenses (
   observation TEXT          DEFAULT NULL,
   created_at  DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at  DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  CONSTRAINT fk_biz_expenses_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+  CONSTRAINT fk_biz_expenses_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  CONSTRAINT fk_biz_expenses_acc  FOREIGN KEY (account_id) REFERENCES business_accounts(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ----------------------------------------------------------

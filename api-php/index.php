@@ -24,11 +24,11 @@ $scriptName = $_SERVER['SCRIPT_NAME'];
 $basePath   = (strpos($requestUri, $scriptName) === 0) ? $scriptName : dirname($scriptName);
 $path       = substr($requestUri, strlen($basePath));
 $path       = trim($path, '/');
-$method        = $_SERVER['REQUEST_METHOD'];
-$segments      = array_values(array_filter(explode('/', $path)));
+$method     = $_SERVER['REQUEST_METHOD'];
+$segments   = array_values(array_filter(explode('/', $path)));
 
-// Identificar rota base e possível ID
-$route    = $segments[0] ?? '';
+// Identificar rota base (normalizando hífens para underscores)
+$route    = str_replace('-', '_', $segments[0] ?? '');
 $subRoute = $segments[1] ?? null;
 $id       = null;
 

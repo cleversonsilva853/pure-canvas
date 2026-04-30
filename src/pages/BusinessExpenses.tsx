@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { useBusinessExpenses, useCreateBusinessExpense, useDeleteBusinessExpense, useBusinessExpenseCategories, useCreateBusinessExpenseCategory, useUpdateBusinessExpenseCategory, useDeleteBusinessExpenseCategory } from '@/hooks/useBusinessData';
+import { useBusinessExpenses, useCreateBusinessExpense, useDeleteBusinessExpense, useBusinessExpenseCategories, useCreateBusinessExpenseCategory, useUpdateBusinessExpenseCategory, useDeleteBusinessExpenseCategory, useBusinessAccounts } from '@/hooks/useBusinessData';
 import { Plus, Trash2, Search, Filter, Download, FileText, FileSpreadsheet, Pencil, Tag, CalendarIcon } from 'lucide-react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -31,10 +31,11 @@ const BusinessExpenses = () => {
   const createCategory = useCreateBusinessExpenseCategory();
   const updateCategory = useUpdateBusinessExpenseCategory();
   const deleteCategory = useDeleteBusinessExpenseCategory();
+  const { data: businessAccounts = [] } = useBusinessAccounts();
 
   const [open, setOpen] = useState(false);
   const [catOpen, setCatOpen] = useState(false);
-  const [form, setForm] = useState({ name: '', category: 'Outros', amount: '', date: getTodayInputDate(), observation: '' });
+  const [form, setForm] = useState({ name: '', category: 'Outros', amount: '', date: getTodayInputDate(), observation: '', account_id: 'none' });
   const [searchTerm, setSearchTerm] = useState('');
   const [filterMonth, setFilterMonth] = useState<string>(String(new Date().getMonth()));
   const [filterYear, setFilterYear] = useState<string>(String(new Date().getFullYear()));
@@ -61,12 +62,16 @@ const BusinessExpenses = () => {
   }, [expenses, filterMonth, filterYear, searchTerm, filterDate]);
 
   const dailyTotal = useMemo(() => expenses.filter(e => e.date === today).reduce((s, e) => s + Number(e.amount), 0), [expenses, today]);
-  const filteredTotal = useMemo(() => filteredExpenses.filter(e => e.date <= today).reduce((s, e) => s + Number(e.amount), 0), [filteredExpenses, today]);
+  const filteredTotal = useMemo(() => filteredExpenses.reduce((s, e) => s + Number(e.amount), 0), [filteredExpenses]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await createExpense.mutateAsync({ ...form, amount: Number(form.amount) });
-    setForm({ name: '', category: 'Outros', amount: '', date: getTodayInputDate(), observation: '' });
+    await createExpense.mutateAsync({ 
+      ...form, 
+      amount: Number(form.amount),
+      account_id: form.account_id === 'none' ? null : form.account_id 
+    });
+    setForm({ name: '', category: 'Outros', amount: '', date: getTodayInputDate(), observation: '', account_id: 'none' });
     setOpen(false);
   };
 
@@ -202,6 +207,19 @@ const BusinessExpenses = () => {
                 </div>
                 <div><Label>Valor (R$)</Label><Input required type="number" step="0.01" min="0" value={form.amount} onChange={e => setForm(f => ({ ...f, amount: e.target.value }))} /></div>
                 <div><Label>Data</Label><Input required type="date" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} /></div>
+                <div><Label>Pagar com a Conta (Empresa)</Label>
+                  <Select value={form.account_id} onValueChange={v => setForm(f => ({ ...f, account_id: v }))}>
+                    <SelectTrigger><SelectValue placeholder="Selecione uma conta (opcional)" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Não abater de saldo</SelectItem>
+                      {Array.isArray(businessAccounts) && businessAccounts.map(acc => (
+                        <SelectItem key={acc.id} value={acc.id}>
+                          {acc.name} (Saldo: {fmt(Number(acc.balance || 0))})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
                 <div><Label>Observação</Label><Textarea value={form.observation} onChange={e => setForm(f => ({ ...f, observation: e.target.value }))} /></div>
                 <Button type="submit" className="w-full" disabled={createExpense.isPending}>Salvar</Button>
               </form>
