@@ -114,6 +114,38 @@ async function main() {
 
   let totalRows = 0;
 
+  // --- Passo Especial: Usuários (auth.users) ---
+  process.stdout.write(`📦 Exportando: users (de auth.users)...`);
+  try {
+    const resUsers = await client.query('SELECT id, email, encrypted_password, created_at, raw_user_meta_data FROM auth.users');
+    const users = resUsers.rows;
+
+    lines.push(`-- ----------------------------------------------------------`);
+    lines.push(`-- users (${users.length} registros vindos de auth.users)`);
+    lines.push(`-- ----------------------------------------------------------`);
+
+    for (const u of users) {
+      const meta = u.raw_user_meta_data || {};
+      const row = {
+        id:            u.id,
+        email:         u.email,
+        password_hash: u.encrypted_password,
+        full_name:     meta.full_name || meta.name || null,
+        avatar_url:    meta.avatar_url || null,
+        created_at:    u.created_at
+      };
+      lines.push(rowToInsert('users', row));
+    }
+    lines.push('');
+    totalRows += users.length;
+    console.log(` ✅ ${users.length} registros`);
+  } catch (err) {
+    console.log(` ⚠️  Erro ao exportar auth.users: ${err.message}`);
+    lines.push(`-- ERRO ao exportar auth.users: ${err.message}`);
+    lines.push('-- Você precisará criar os usuários manualmente ou via registro na API.');
+    lines.push('');
+  }
+
   for (const table of TABLES) {
     process.stdout.write(`📦 Exportando: ${table}...`);
     try {
@@ -168,8 +200,8 @@ async function main() {
   console.log('\n✅ Exportação concluída!');
   console.log(`   📁 Arquivo gerado: supabase_export_data.sql`);
   console.log(`   📊 Total de registros: ${totalRows}`);
-  console.log('\n⚠️  Lembre-se: usuarios (email/senha) NÃO são migrados.');
-  console.log('   Cada usuário precisará criar nova senha na API PHP.\n');
+  console.log('\n💡 Dica: Os usuários foram exportados do schema auth.users.');
+  console.log('   As senhas criptografadas do Supabase devem funcionar se forem BCrypt.\n');
 }
 
 main().catch(err => {

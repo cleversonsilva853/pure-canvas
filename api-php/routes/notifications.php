@@ -16,19 +16,36 @@ if ($method === 'GET' && !$id) {
     $stmt = $db->prepare('SELECT * FROM notifications WHERE user_id = ? ORDER BY scheduled_for DESC');
     $stmt->execute([$userId]);
   }
-  jsonResponse($stmt->fetchAll());
+  $rows = $stmt->fetchAll();
+  foreach ($rows as &$row) {
+    if (!empty($row['weekdays_config'])) {
+      $row['weekdays_config'] = json_decode($row['weekdays_config'], true);
+    }
+  }
+  jsonResponse($rows);
 }
 if ($method === 'GET' && $id) {
-  $stmt = $db->prepare('SELECT * FROM notifications WHERE id = ? AND user_id = ?'); $stmt->execute([$id, $userId]);
-  $row = $stmt->fetch(); if (!$row) jsonResponse(['error' => 'Notificação não encontrada'], 404); jsonResponse($row);
+  $stmt = $db->prepare('SELECT * FROM notifications WHERE id = ? AND user_id = ?');
+  $stmt->execute([$id, $userId]);
+  $row = $stmt->fetch();
+  if (!$row) jsonResponse(['error' => 'Notificação não encontrada'], 404);
+  if (!empty($row['weekdays_config'])) {
+    $row['weekdays_config'] = json_decode($row['weekdays_config'], true);
+  }
+  jsonResponse($row);
 }
 if ($method === 'POST') {
   $body = getJsonBody(); require_fields($body, ['title', 'description', 'scheduled_for']);
   $newId = generateUUID();
+  $weekdays = isset($body['weekdays_config']) ? json_encode($body['weekdays_config']) : null;
   $db->prepare('INSERT INTO notifications (id, user_id, title, description, scheduled_for, status, recurrence, weekdays_config, context) VALUES (?,?,?,?,?,?,?,?,?)')
-     ->execute([$newId, $userId, $body['title'], $body['description'], $body['scheduled_for'], $body['status'] ?? 'pending', $body['recurrence'] ?? 'none', $body['weekdays_config'] ?? null, $body['context'] ?? null]);
+     ->execute([$newId, $userId, $body['title'], $body['description'], $body['scheduled_for'], $body['status'] ?? 'pending', $body['recurrence'] ?? 'none', $weekdays, $body['context'] ?? null]);
   $stmt2 = $db->prepare('SELECT * FROM notifications WHERE id = ?'); $stmt2->execute([$newId]);
-  jsonResponse($stmt2->fetch(), 201);
+  $row = $stmt2->fetch();
+  if ($row && !empty($row['weekdays_config'])) {
+    $row['weekdays_config'] = json_decode($row['weekdays_config'], true);
+  }
+  jsonResponse($row, 201);
 }
 if ($method === 'PUT' && $id) {
   $body = getJsonBody();
@@ -36,12 +53,24 @@ if ($method === 'PUT' && $id) {
   if (!$stmt->fetch()) jsonResponse(['error' => 'Notificação não encontrada'], 404);
   $fields = []; $params = [];
   foreach (['title','description','scheduled_for','status','recurrence','weekdays_config','context'] as $f) {
-    if (array_key_exists($f, $body)) { $fields[] = "`$f` = ?"; $params[] = $body[$f]; }
+    if (array_key_exists($f, $body)) {
+      $fields[] = "`$f` = ?";
+      $val = $body[$f];
+      if ($f === 'weekdays_config' && is_array($val)) {
+        $val = json_encode($val);
+      }
+      $params[] = $val;
+    }
   }
   $params[] = $id;
   $db->prepare('UPDATE notifications SET ' . implode(', ', $fields) . ' WHERE id = ?')->execute($params);
-  $stmt2 = $db->prepare('SELECT * FROM notifications WHERE id = ?'); $stmt2->execute([$id]);
-  jsonResponse($stmt2->fetch());
+  $stmt2 = $db->prepare('SELECT * FROM notifications WHERE id = ?');
+  $stmt2->execute([$id]);
+  $row = $stmt2->fetch();
+  if ($row && !empty($row['weekdays_config'])) {
+    $row['weekdays_config'] = json_decode($row['weekdays_config'], true);
+  }
+  jsonResponse($row);
 }
 if ($method === 'DELETE' && $id) {
   $stmt = $db->prepare('SELECT id FROM notifications WHERE id = ? AND user_id = ?'); $stmt->execute([$id, $userId]);
