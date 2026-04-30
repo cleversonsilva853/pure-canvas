@@ -37,10 +37,14 @@ try {
         echo "\n3. Testando verificação de senha para '{$passToTest}'...\n";
         if (password_verify($passToTest, $user['password_hash'])) {
             echo "✅ SUCESSO: A senha 'admin123' é VÁLIDA para esta hash!\n";
-            echo "DICA: Se aqui deu sucesso, o problema pode ser cache no navegador ou no token antigo.\n";
         } else {
             echo "❌ ERRO: A senha 'admin123' NÃO confere com a hash gravada.\n";
-            echo "DICA: Tente rodar o comando SQL de INSERT novamente que te passei por último.\n";
+            
+            // Gerar uma hash nova no PRÓPRIO SERVIDOR para garantir compatibilidade
+            $newHash = password_hash($passToTest, PASSWORD_BCRYPT);
+            echo "\n--- COMANDO DE CORREÇÃO (Rode no phpMyAdmin) ---\n";
+            echo "UPDATE users SET password_hash = '{$newHash}' WHERE username = 'admin';\n";
+            echo "------------------------------------------------\n";
         }
     }
 
