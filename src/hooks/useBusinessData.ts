@@ -195,6 +195,15 @@ export const useBusinessProductCompositions = (productId?: string) => {
   });
 };
 
+export const useAllBusinessProductCompositions = () => {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: ['business_product_compositions_all'],
+    queryFn: () => api.get('/business/compositions'),
+    enabled: !!user,
+  });
+};
+
 export const useUpdateProductComposition = () => {
   const qc = useQueryClient();
   const { toast } = useToast();
