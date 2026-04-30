@@ -9,7 +9,7 @@
 define('DB_HOST', 'localhost');                  // HostGator usa sempre 'localhost'
 define('DB_NAME', 'clev2092_financeiro');         // ✅ Banco MySQL
 define('DB_USER', 'clev2092_financeirocleve');    // ✅ Usuário MySQL (prefixo cPanel + nome)
-define('DB_PASS', 'SUA_SENHA_AQUI');               // ✅ Senha MySQL
+define('DB_PASS', 'Ferreira1998@');             // ✅ Senha MySQL
 define('DB_CHARSET', 'utf8mb4');
 
 function getDB(): PDO {
