@@ -274,3 +274,109 @@ export const useDeleteBusinessExpenseCategory = () => {
   });
 };
 
+// ---- Business Product Additions (Custos Dinâmicos) ----
+export const useBusinessProductAdditions = (productId?: string) => {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: ['business_product_additions', productId],
+    queryFn: () => api.get(`/business/product-additions?product_id=${productId}`),
+    enabled: !!user && !!productId,
+  });
+};
+
+export const useCreateBusinessProductAddition = () => {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: (values: any) => api.post('/business/product-additions', values),
+    onSuccess: (_, { product_id }) => {
+      qc.invalidateQueries({ queryKey: ['business_product_additions', product_id] });
+      toast({ title: 'Custo adicional adicionado!' });
+    },
+    onError: () => toast({ title: 'Erro ao adicionar custo', variant: 'destructive' }),
+  });
+};
+
+export const useDeleteBusinessProductAddition = () => {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: (values: { id: string; productId: string }) => api.delete(`/business/product-additions/${values.id}`),
+    onSuccess: (_, { productId }) => {
+      qc.invalidateQueries({ queryKey: ['business_product_additions', productId] });
+      toast({ title: 'Custo removido!' });
+    },
+  });
+};
+
+// ---- Business Product Sale Units (Unidades de Venda) ----
+export const useBusinessProductSaleUnits = (productId?: string) => {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: ['business_product_sale_units', productId],
+    queryFn: () => api.get(`/business/product-sale-units?product_id=${productId}`),
+    enabled: !!user && !!productId,
+  });
+};
+
+export const useCreateBusinessProductSaleUnit = () => {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: (values: any) => api.post('/business/product-sale-units', values),
+    onSuccess: (_, { product_id }) => {
+      qc.invalidateQueries({ queryKey: ['business_product_sale_units', product_id] });
+      toast({ title: 'Unidade de venda adicionada!' });
+    },
+    onError: () => toast({ title: 'Erro ao adicionar unidade', variant: 'destructive' }),
+  });
+};
+
+export const useDeleteBusinessProductSaleUnit = () => {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: (values: { id: string; productId: string }) => api.delete(`/business/product-sale-units/${values.id}`),
+    onSuccess: (_, { productId }) => {
+      qc.invalidateQueries({ queryKey: ['business_product_sale_units', productId] });
+      toast({ title: 'Unidade removida!' });
+    },
+  });
+};
+
+// ---- Business Product Purchases (Histórico de Compras) ----
+export const useBusinessProductPurchases = (productId?: string) => {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: ['business_product_purchases', productId],
+    queryFn: () => api.get(`/business/product-purchases?product_id=${productId}`),
+    enabled: !!user && !!productId,
+  });
+};
+
+export const useCreateBusinessProductPurchase = () => {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: (values: any) => api.post('/business/product-purchases', values),
+    onSuccess: (_, { product_id }) => {
+      qc.invalidateQueries({ queryKey: ['business_product_purchases', product_id] });
+      qc.invalidateQueries({ queryKey: ['business_products'] });
+      toast({ title: 'Compra registrada!' });
+    },
+    onError: () => toast({ title: 'Erro ao registrar compra', variant: 'destructive' }),
+  });
+};
+
+export const useDeleteBusinessProductPurchase = () => {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: (values: { id: string; productId: string }) => api.delete(`/business/product-purchases/${values.id}`),
+    onSuccess: (_, { productId }) => {
+      qc.invalidateQueries({ queryKey: ['business_product_purchases', productId] });
+      toast({ title: 'Registro removido!' });
+    },
+  });
+};
+
