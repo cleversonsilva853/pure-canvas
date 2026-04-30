@@ -93,9 +93,12 @@ export const supabase = {
   auth: {
     getSession: async () => ({ data: { session: { user: { id: 'temp' } } }, error: null }),
     onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
-    signInWithPassword: async ({ email, password }: any) => {
+    signInWithPassword: async ({ username, email, password }: any) => {
         try {
-            const data = await api.post('/auth/login', { email, password });
+            const data = await api.post('/auth/login', { 
+                username: username || email, 
+                password 
+            });
             if (data.token) {
                 localStorage.setItem('inforcontrol_token', data.token);
                 return mockResponse({ user: data.user, session: { access_token: data.token } });

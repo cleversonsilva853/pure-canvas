@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { Eye, EyeOff, Wallet, Mail } from 'lucide-react';
+import { Eye, EyeOff, Wallet, User } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -14,7 +14,8 @@ import React from 'react';
 
 const Auth = React.forwardRef<HTMLDivElement>((_, ref) => {
   const [isLogin, setIsLogin] = useState(true);
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState(''); // Opcional no cadastro
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -28,14 +29,15 @@ const Auth = React.forwardRef<HTMLDivElement>((_, ref) => {
 
     try {
       if (isLogin) {
-        const response = await api.post('/auth/login', { email, password });
+        const response = await api.post('/auth/login', { username, password });
         localStorage.setItem('inforcontrol_token', response.token);
         await refreshUser();
         toast.success('Login realizado com sucesso!');
         navigate('/');
       } else {
         await api.post('/auth/register', { 
-          email, 
+          username,
+          email: email || undefined, 
           password, 
           full_name: fullName 
         });
@@ -96,20 +98,33 @@ const Auth = React.forwardRef<HTMLDivElement>((_, ref) => {
                 </div>
               )}
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="username">Usuário</Label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="username"
+                    type="text"
+                    placeholder="Seu nome de usuário"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    className="pl-10"
+                    required
+                  />
+                </div>
+              </div>
+
+              {!isLogin && (
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email (Opcional)</Label>
                   <Input
                     id="email"
                     type="email"
                     placeholder="seu@email.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="pl-10"
-                    required
                   />
                 </div>
-              </div>
+              )}
               <div className="space-y-2">
                 <Label htmlFor="password">Senha</Label>
                 <div className="relative">

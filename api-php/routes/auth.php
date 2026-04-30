@@ -15,19 +15,19 @@ $db = getDB();
 // ── POST /auth/login ──────────────────────────────────────────
 if ($method === 'POST' && $action === 'login') {
   $body = getJsonBody();
-  require_fields($body, ['email', 'password']);
+  require_fields($body, ['username', 'password']);
 
-  $stmt = $db->prepare('SELECT * FROM users WHERE email = ? LIMIT 1');
-  $stmt->execute([strtolower(trim($body['email']))]);
+  $stmt = $db->prepare('SELECT * FROM users WHERE username = ? LIMIT 1');
+  $stmt->execute([trim($body['username'])]);
   $user = $stmt->fetch();
 
   if (!$user || !password_verify($body['password'], $user['password_hash'])) {
-    jsonResponse(['error' => 'Email ou senha inválidos'], 401);
+    jsonResponse(['error' => 'Usuário ou senha inválidos'], 401);
   }
 
   $token = JWT::encode([
     'user_id' => $user['id'],
-    'email'   => $user['email'],
+    'username' => $user['username'],
     'iat'     => time(),
     'exp'     => time() + JWT_EXPIRY,
   ]);
@@ -36,7 +36,7 @@ if ($method === 'POST' && $action === 'login') {
     'token' => $token,
     'user'  => [
       'id'         => $user['id'],
-      'email'      => $user['email'],
+      'username'   => $user['username'],
       'full_name'  => $user['full_name'],
       'created_by' => $user['created_by'],
       'created_at' => $user['created_at'],
@@ -47,9 +47,9 @@ if ($method === 'POST' && $action === 'login') {
 // ── POST /auth/register ───────────────────────────────────────
 if ($method === 'POST' && $action === 'register') {
   $body = getJsonBody();
-  require_fields($body, ['email', 'password']);
+  require_fields($body, ['username', 'password']);
 
-  $email    = strtolower(trim($body['email']));
+  $username = trim($body['username']);
   $password = $body['password'];
   $fullName = trim($body['full_name'] ?? '');
 
@@ -57,19 +57,19 @@ if ($method === 'POST' && $action === 'register') {
     jsonResponse(['error' => 'A senha deve ter pelo menos 6 caracteres'], 422);
   }
 
-  // Verificar email duplicado
-  $stmt = $db->prepare('SELECT id FROM users WHERE email = ?');
-  $stmt->execute([$email]);
+  // Verificar usuário duplicado
+  $stmt = $db->prepare('SELECT id FROM users WHERE username = ?');
+  $stmt->execute([$username]);
   if ($stmt->fetch()) {
-    jsonResponse(['error' => 'Este email já está cadastrado'], 409);
+    jsonResponse(['error' => 'Este nome de usuário já está em uso'], 409);
   }
 
   $id           = generateUUID();
   $passwordHash = password_hash($password, PASSWORD_BCRYPT, ['cost' => 12]);
   $createdBy    = $body['created_by'] ?? null;
 
-  $stmt = $db->prepare('INSERT INTO users (id, email, password_hash, full_name, created_by) VALUES (?, ?, ?, ?, ?)');
-  $stmt->execute([$id, $email, $passwordHash, $fullName ?: null, $createdBy]);
+  $stmt = $db->prepare('INSERT INTO users (id, username, password_hash, full_name, created_by) VALUES (?, ?, ?, ?, ?)');
+  $stmt->execute([$id, $username, $passwordHash, $fullName ?: null, $createdBy]);
 
   // Criar perfil automaticamente
   $profileId = generateUUID();
@@ -78,7 +78,7 @@ if ($method === 'POST' && $action === 'register') {
 
   $token = JWT::encode([
     'user_id' => $id,
-    'email'   => $email,
+    'username' => $username,
     'iat'     => time(),
     'exp'     => time() + JWT_EXPIRY,
   ]);
@@ -87,7 +87,7 @@ if ($method === 'POST' && $action === 'register') {
     'token' => $token,
     'user'  => [
       'id'         => $id,
-      'email'      => $email,
+      'username'   => $username,
       'full_name'  => $fullName ?: null,
       'created_by' => $createdBy,
     ],
@@ -97,7 +97,7 @@ if ($method === 'POST' && $action === 'register') {
 // ── GET /auth/me ──────────────────────────────────────────────
 if ($method === 'GET' && $action === 'me') {
   $payload = requireAuth();
-  $stmt    = $db->prepare('SELECT id, email, full_name, avatar_url, created_by, created_at FROM users WHERE id = ?');
+  $stmt    = $db->prepare('SELECT id, username, full_name, avatar_url, created_by, created_at FROM users WHERE id = ?');
   $stmt->execute([$payload['user_id']]);
   $user = $stmt->fetch();
 

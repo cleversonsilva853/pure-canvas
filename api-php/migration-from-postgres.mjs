@@ -128,7 +128,7 @@ async function main() {
       const meta = u.raw_user_meta_data || {};
       const row = {
         id:            u.id,
-        email:         u.email,
+        username:      u.email, // O e-mail original vira o nome de usuário
         password_hash: u.encrypted_password,
         full_name:     meta.full_name || meta.name || null,
         avatar_url:    meta.avatar_url || null,
