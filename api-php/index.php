@@ -18,11 +18,12 @@ require_once __DIR__ . '/middleware/auth.php';
 require_once __DIR__ . '/helpers/response.php';
 require_once __DIR__ . '/helpers/uuid.php';
 
-// Parse da URL
-$requestUri    = $_SERVER['REQUEST_URI'];
-$scriptName    = dirname($_SERVER['SCRIPT_NAME']);
-$path          = str_replace($scriptName, '', parse_url($requestUri, PHP_URL_PATH));
-$path          = trim($path, '/');
+// Parse da URL de forma mais robusta
+$requestUri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+$scriptName = $_SERVER['SCRIPT_NAME'];
+$basePath   = (strpos($requestUri, $scriptName) === 0) ? $scriptName : dirname($scriptName);
+$path       = substr($requestUri, strlen($basePath));
+$path       = trim($path, '/');
 $method        = $_SERVER['REQUEST_METHOD'];
 $segments      = array_values(array_filter(explode('/', $path)));
 

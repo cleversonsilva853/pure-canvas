@@ -13,11 +13,8 @@ import { useNavigate } from 'react-router-dom';
 import React from 'react';
 
 const Auth = React.forwardRef<HTMLDivElement>((_, ref) => {
-  const [isLogin, setIsLogin] = useState(true);
   const [username, setUsername] = useState('');
-  const [email, setEmail] = useState(''); // Opcional no cadastro
   const [password, setPassword] = useState('');
-  const [fullName, setFullName] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const { refreshUser } = useAuth();
@@ -28,30 +25,17 @@ const Auth = React.forwardRef<HTMLDivElement>((_, ref) => {
     setLoading(true);
 
     try {
-      if (isLogin) {
-        const response = await api.post('/auth/login', { username, password });
-        localStorage.setItem('inforcontrol_token', response.token);
-        await refreshUser();
-        toast.success('Login realizado com sucesso!');
-        navigate('/');
-      } else {
-        await api.post('/auth/register', { 
-          username,
-          email: email || undefined, 
-          password, 
-          full_name: fullName 
-        });
-        toast.success('Conta criada com sucesso! Agora faça login.');
-        setIsLogin(true);
-      }
+      const response = await api.post('/auth/login', { username, password });
+      localStorage.setItem('inforcontrol_token', response.token);
+      await refreshUser();
+      toast.success('Login realizado com sucesso!');
+      navigate('/');
     } catch (error: any) {
-      toast.error(error.message || 'Erro ao processar sua solicitação');
+      toast.error(error.message || 'Erro ao realizar login');
     } finally {
       setLoading(false);
     }
   };
-
-
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
@@ -73,30 +57,13 @@ const Auth = React.forwardRef<HTMLDivElement>((_, ref) => {
 
         <Card className="shadow-lg border-border/50">
           <CardHeader className="space-y-1 pb-4">
-            <CardTitle className="text-xl">
-              {isLogin ? 'Entrar' : 'Criar conta'}
-            </CardTitle>
+            <CardTitle className="text-xl">Entrar</CardTitle>
             <CardDescription>
-              {isLogin
-                ? 'Acesse sua conta para gerenciar suas finanças'
-                : 'Crie sua conta e comece a controlar seu dinheiro'}
+              Acesse sua conta para gerenciar suas finanças
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-
             <form onSubmit={handleSubmit} className="space-y-4">
-              {!isLogin && (
-                <div className="space-y-2">
-                  <Label htmlFor="fullName">Nome completo</Label>
-                  <Input
-                    id="fullName"
-                    placeholder="Seu nome"
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    required={!isLogin}
-                  />
-                </div>
-              )}
               <div className="space-y-2">
                 <Label htmlFor="username">Usuário</Label>
                 <div className="relative">
@@ -113,18 +80,6 @@ const Auth = React.forwardRef<HTMLDivElement>((_, ref) => {
                 </div>
               </div>
 
-              {!isLogin && (
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email (Opcional)</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="seu@email.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                  />
-                </div>
-              )}
               <div className="space-y-2">
                 <Label htmlFor="password">Senha</Label>
                 <div className="relative">
@@ -148,20 +103,9 @@ const Auth = React.forwardRef<HTMLDivElement>((_, ref) => {
               </div>
 
               <Button type="submit" className="w-full h-11" disabled={loading}>
-                {loading ? 'Processando...' : isLogin ? 'Entrar' : 'Criar conta'}
+                {loading ? 'Processando...' : 'Entrar'}
               </Button>
             </form>
-
-            <p className="text-center text-sm text-muted-foreground">
-              {isLogin ? 'Não tem uma conta?' : 'Já tem uma conta?'}{' '}
-              <button
-                type="button"
-                onClick={() => setIsLogin(!isLogin)}
-                className="text-primary hover:underline font-medium"
-              >
-                {isLogin ? 'Criar conta' : 'Entrar'}
-              </button>
-            </p>
           </CardContent>
         </Card>
       </motion.div>

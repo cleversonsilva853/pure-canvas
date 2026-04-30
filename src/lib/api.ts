@@ -16,7 +16,8 @@ async function request(endpoint: string, options: RequestInit = {}) {
     ...options.headers,
   };
 
-  const response = await fetch(`${API_URL}${endpoint}`, {
+  const url = `${API_URL.replace(/\/$/, '')}/${endpoint.replace(/^\//, '')}`;
+  const response = await fetch(url, {
     ...options,
     headers,
   });
