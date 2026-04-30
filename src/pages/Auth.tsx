@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { api } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,6 +7,8 @@ import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { Eye, EyeOff, Wallet, Mail } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useAuth } from '@/contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 import React from 'react';
 
@@ -17,6 +19,8 @@ const Auth = React.forwardRef<HTMLDivElement>((_, ref) => {
   const [fullName, setFullName] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const { refreshUser } = useAuth();
+  const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,27 +28,27 @@ const Auth = React.forwardRef<HTMLDivElement>((_, ref) => {
 
     try {
       if (isLogin) {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
+        const response = await api.post('/auth/login', { email, password });
+        localStorage.setItem('inforcontrol_token', response.token);
+        await refreshUser();
         toast.success('Login realizado com sucesso!');
+        navigate('/');
       } else {
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            data: { full_name: fullName },
-            emailRedirectTo: window.location.origin,
-          },
+        await api.post('/auth/register', { 
+          email, 
+          password, 
+          full_name: fullName 
         });
-        if (error) throw error;
-        toast.success('Conta criada! Verifique seu email para confirmar.');
+        toast.success('Conta criada com sucesso! Agora faça login.');
+        setIsLogin(true);
       }
-    } catch (error: unknown) {
-      toast.error(error instanceof Error ? error.message : 'Erro ao processar sua solicitação');
+    } catch (error: any) {
+      toast.error(error.message || 'Erro ao processar sua solicitação');
     } finally {
       setLoading(false);
     }
   };
+
 
 
   return (

@@ -21,8 +21,8 @@ define('CRON_KEY', 'TROQUE_POR_UMA_CHAVE_SECRETA_DO_CRON'); // Segurança extra 
 
 // Configurações VAPID (mesmas do .env do frontend)
 define('VAPID_PUBLIC_KEY',  'BLol-lQbtqEmeGBRNIKC5zlGpyI6HNg7s_HXonSv-bKqNMwhWA456lq0hBLFCWmrKVoqR4tJkM2Jp0Z0YsPgFtA');
-define('VAPID_PRIVATE_KEY', 'COLE_AQUI_SUA_VAPID_PRIVATE_KEY'); // Dashboard Supabase → Settings → Edge Functions → Secrets
-define('VAPID_SUBJECT',     'mailto:suporte@inforcontrol.com.br');
+define('VAPID_PRIVATE_KEY', 'COLE_AQUI_SUA_VAPID_PRIVATE_KEY'); // Supabase Dashboard → Edge Functions → Secrets → VAPID_PRIVATE_KEY
+define('VAPID_SUBJECT',     'mailto:contato@infornexa.com.br');
 
 // Inclusões
 $apiRoot = dirname(__DIR__);

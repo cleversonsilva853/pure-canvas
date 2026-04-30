@@ -6,10 +6,10 @@
  * Configure as variáveis abaixo com seus dados do cPanel → MySQL.
  */
 
-define('DB_HOST', 'localhost');         // Geralmente 'localhost' na HostGator
-define('DB_NAME', 'SEU_BANCO_MYSQL');   // Nome do banco criado no cPanel
-define('DB_USER', 'SEU_USUARIO_MYSQL'); // Usuário MySQL criado no cPanel
-define('DB_PASS', 'SUA_SENHA_MYSQL');   // Senha do usuário MySQL
+define('DB_HOST', 'localhost');                  // HostGator usa sempre 'localhost'
+define('DB_NAME', 'clev2092_financeiro');         // ✅ Banco MySQL
+define('DB_USER', 'clev2092_financeirocleve');    // ✅ Usuário MySQL (prefixo cPanel + nome)
+define('DB_PASS', 'Ferreira1998@');               // ✅ Senha MySQL
 define('DB_CHARSET', 'utf8mb4');
 
 function getDB(): PDO {
