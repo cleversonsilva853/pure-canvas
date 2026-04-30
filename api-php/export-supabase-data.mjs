@@ -22,7 +22,8 @@ import { writeFileSync } from 'fs';
 
 // ─── CONFIGURAÇÃO ────────────────────────────────────────────
 const SUPABASE_URL     = 'https://oaxylfbcnshpkuiymsmv.supabase.co';
-const SERVICE_ROLE_KEY = 'COLE_AQUI_SUA_SERVICE_ROLE_KEY'; // ← substitua
+const SERVICE_ROLE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9heHlsZmJjbnNocGt1aXltc212Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3Mzc1NTIyNywiZXhwIjoyMDg5MzMxMjI3fQ.1dPkRovZJzreKuqPi6ggyYTA9GycqZvPBElciwPiR34';
+
 
 // Tabelas a exportar (na ordem correta para respeitar FKs no MySQL)
 const TABLES = [
