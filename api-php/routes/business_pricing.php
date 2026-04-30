@@ -26,7 +26,8 @@ if ($method === 'PUT' && $id) {
     if (array_key_exists($f, $body)) { $fields[] = "`$f` = ?"; $params[] = $body[$f]; }
   }
   $params[] = $id;
-  $db->prepare('UPDATE business_food_pricing SET ' . implode(', ', $fields) . ' WHERE id = ?')->execute($params);
+  $params[] = $ownerId;
+  $db->prepare('UPDATE business_food_pricing SET ' . implode(', ', $fields) . ' WHERE id = ? AND user_id = ?')->execute($params);
   $stmt2 = $db->prepare('SELECT * FROM business_food_pricing WHERE id = ?'); $stmt2->execute([$id]);
   jsonResponse($stmt2->fetch());
 }
