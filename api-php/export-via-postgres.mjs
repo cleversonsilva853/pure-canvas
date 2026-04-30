@@ -19,7 +19,7 @@ const { Client } = pkg;
 import { writeFileSync } from 'fs';
 
 // ─── CONFIGURAÇÃO ────────────────────────────────────────────
-const DB_PASSWORD = 'sb_secret_ZmTY9jZIh1vesdCtTnyoMg_uNggEfyZ'; // ← Supabase → Settings → Database → "Reveal"
+const DB_PASSWORD = 'COLE_AQUI_A_SENHA_DO_BANCO'; // ← Supabase → Settings → Database → "Reveal"
 const DB_HOST     = 'db.oaxylfbcnshpkuiymsmv.supabase.co';
 const DB_NAME     = 'postgres';
 const DB_USER     = 'postgres';
