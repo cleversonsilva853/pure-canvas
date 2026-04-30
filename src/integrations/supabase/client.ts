@@ -12,70 +12,59 @@ const mockResponse = (data: any, error: any = null) => ({ data, error, count: 0 
 
 export const supabase = {
   from: (table: string) => {
-    // Mapeia nomes de tabelas se necessário (ex: 'transactions' -> '/transactions')
     const endpoint = `/${table.replace(/_/g, '-')}`;
 
+    // Helper para lidar com múltiplos filtros
+    const buildQuery = (filters: Record<string, any>) => {
+      const params = new URLSearchParams();
+      Object.entries(filters).forEach(([k, v]) => params.append(k, v));
+      return params.toString() ? `?${params.toString()}` : '';
+    };
+
+    const createQueryBuilder = (filters: Record<string, any> = {}) => ({
+      eq: function(col: string, val: any) {
+        return createQueryBuilder({ ...filters, [col]: val });
+      },
+      order: function() { return this; },
+      limit: function() { return this; },
+      single: async () => {
+        try {
+          const id = filters.id;
+          const url = id ? `${endpoint}/${id}` : `${endpoint}${buildQuery(filters)}`;
+          const data = await api.get(url);
+          return mockResponse(Array.isArray(data) ? data[0] : data);
+        } catch (e: any) { return mockResponse(null, e); }
+      },
+      then: async (resolve: any) => {
+        try {
+          const data = await api.get(`${endpoint}${buildQuery(filters)}`);
+          resolve(mockResponse(data));
+        } catch (e: any) { resolve(mockResponse(null, e)); }
+      }
+    });
+
     return {
-      select: (columns: string = '*') => ({
-        eq: function(col: string, val: any) {
-          return {
-            single: async () => {
-              try {
-                const data = await api.get(`${endpoint}/${val}`);
-                return mockResponse(data);
-              } catch (e: any) { return mockResponse(null, e); }
-            },
-            then: async (resolve: any) => {
-              try {
-                const data = await api.get(`${endpoint}?${col}=${val}`);
-                resolve(mockResponse(data));
-              } catch (e: any) { resolve(mockResponse(null, e)); }
-            }
-          };
-        },
-        limit: (n: number) => ({
-           then: async (resolve: any) => {
-             try {
-               const data = await api.get(endpoint);
-               resolve(mockResponse(data.slice(0, n)));
-             } catch (e: any) { resolve(mockResponse(null, e)); }
-           }
-        }),
-        order: (col: string, { ascending = true } = {}) => ({
-          then: async (resolve: any) => {
-             try {
-               const data = await api.get(endpoint);
-               resolve(mockResponse(data));
-             } catch (e: any) {
-               resolve(mockResponse(null, e));
-             }
-          }
-        }),
-        then: async (resolve: any) => {
-          try {
-            const data = await api.get(endpoint);
-            resolve(mockResponse(data));
-          } catch (e: any) {
-            resolve(mockResponse(null, e));
-          }
-        }
-      }),
+      select: (columns: string = '*') => createQueryBuilder(),
       insert: async (values: any) => {
         try {
+          // Se for array, envia como está (o backend deve tratar)
           const data = await api.post(endpoint, values);
           return mockResponse(data);
-        } catch (e: any) {
-          return mockResponse(null, e);
-        }
+        } catch (e: any) { return mockResponse(null, e); }
+      },
+      upsert: async (values: any) => {
+        try {
+          // Emula upsert usando POST (o backend deve decidir se insere ou atualiza)
+          const data = await api.post(`${endpoint}/upsert`, values);
+          return mockResponse(data);
+        } catch (e: any) { return mockResponse(null, e); }
       },
       update: (values: any) => ({
         eq: async (col: string, val: any) => {
           try {
             const data = await api.put(`${endpoint}/${val}`, values);
             return mockResponse(data);
-          } catch (e: any) {
-            return mockResponse(null, e);
-          }
+          } catch (e: any) { return mockResponse(null, e); }
         }
       }),
       delete: () => ({
@@ -83,9 +72,7 @@ export const supabase = {
           try {
             const data = await api.delete(`${endpoint}/${val}`);
             return mockResponse(data);
-          } catch (e: any) {
-            return mockResponse(null, e);
-          }
+          } catch (e: any) { return mockResponse(null, e); }
         }
       })
     };

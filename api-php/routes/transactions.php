@@ -60,36 +60,43 @@ if ($method === 'GET' && $id) {
 
 if ($method === 'POST') {
   $body = getJsonBody();
-  require_fields($body, ['amount', 'date', 'type']);
-  $newId = generateUUID();
-  $stmt = $db->prepare('
-    INSERT INTO transactions (id, user_id, account_id, category_id, credit_card_id, parent_transaction_id,
-      context_id, context_type, type, amount, description, date, is_paid, is_recurring,
-      recurrence_type, installment_number, total_installments, paid_by)
-    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
-  ');
-  $stmt->execute([
-    $newId, $userId,
-    $body['account_id']            ?? null,
-    $body['category_id']           ?? null,
-    $body['credit_card_id']        ?? null,
-    $body['parent_transaction_id'] ?? null,
-    $body['context_id']            ?? null,
-    $body['context_type']          ?? null,
-    $body['type'],
-    $body['amount'],
-    $body['description']           ?? null,
-    $body['date'],
-    isset($body['is_paid'])        ? (int)$body['is_paid']        : 1,
-    isset($body['is_recurring'])   ? (int)$body['is_recurring']   : 0,
-    $body['recurrence_type']       ?? null,
-    $body['installment_number']    ?? null,
-    $body['total_installments']    ?? null,
-    $body['paid_by']               ?? null,
-  ]);
-  $stmt2 = $db->prepare('SELECT * FROM transactions WHERE id = ?');
-  $stmt2->execute([$newId]);
-  jsonResponse($stmt2->fetch(), 201);
+  $items = isset($body[0]) && is_array($body[0]) ? $body : [$body];
+  $results = [];
+
+  foreach ($items as $item) {
+    require_fields($item, ['amount', 'date', 'type']);
+    $newId = generateUUID();
+    $stmt = $db->prepare('
+      INSERT INTO transactions (id, user_id, account_id, category_id, credit_card_id, parent_transaction_id,
+        context_id, context_type, type, amount, description, date, is_paid, is_recurring,
+        recurrence_type, installment_number, total_installments, paid_by)
+      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+    ');
+    $stmt->execute([
+      $newId, $userId,
+      $item['account_id']            ?? null,
+      $item['category_id']           ?? null,
+      $item['credit_card_id']        ?? null,
+      $item['parent_transaction_id'] ?? null,
+      $item['context_id']            ?? null,
+      $item['context_type']          ?? null,
+      $item['type'],
+      $item['amount'],
+      $item['description']           ?? null,
+      $item['date'],
+      isset($item['is_paid'])        ? (int)$item['is_paid']        : 1,
+      isset($item['is_recurring'])   ? (int)$item['is_recurring']   : 0,
+      $item['recurrence_type']       ?? null,
+      $item['installment_number']    ?? null,
+      $item['total_installments']    ?? null,
+      $item['paid_by']               ?? null,
+    ]);
+    $stmt2 = $db->prepare('SELECT * FROM transactions WHERE id = ?');
+    $stmt2->execute([$newId]);
+    $results[] = $stmt2->fetch();
+  }
+  
+  jsonResponse(count($results) === 1 && !isset($body[0]) ? $results[0] : $results, 201);
 }
 
 if ($method === 'PUT' && $id) {
