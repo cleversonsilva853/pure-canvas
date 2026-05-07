@@ -356,10 +356,12 @@ CREATE TABLE IF NOT EXISTS business_sales (
   quantity     INT           NOT NULL DEFAULT 1,
   unit_price   DECIMAL(15,2) NOT NULL,
   total_price  DECIMAL(15,2) NOT NULL,
+  account_id   VARCHAR(36)   DEFAULT NULL,
   date         DATE          NOT NULL DEFAULT (CURDATE()),
   created_at   DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT fk_biz_sales_user    FOREIGN KEY (user_id)    REFERENCES users(id)             ON DELETE CASCADE,
-  CONSTRAINT fk_biz_sales_product FOREIGN KEY (product_id) REFERENCES business_products(id) ON DELETE SET NULL
+  CONSTRAINT fk_biz_sales_product FOREIGN KEY (product_id) REFERENCES business_products(id) ON DELETE SET NULL,
+  CONSTRAINT fk_biz_sales_acc     FOREIGN KEY (account_id) REFERENCES business_accounts(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ----------------------------------------------------------

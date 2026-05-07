@@ -120,6 +120,7 @@ export const useCreateBusinessSale = () => {
     mutationFn: (values: any) => api.post('/business/sales', values),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['business_sales'] });
+      qc.invalidateQueries({ queryKey: ['business_accounts'] });
       toast({ title: 'Venda registrada!' });
     },
     onError: () => toast({ title: 'Erro ao registrar venda', variant: 'destructive' }),
@@ -133,6 +134,7 @@ export const useDeleteBusinessSale = () => {
     mutationFn: (id: string) => api.delete(`/business/sales/${id}`),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['business_sales'] });
+      qc.invalidateQueries({ queryKey: ['business_accounts'] });
       toast({ title: 'Venda removida!' });
     },
   });

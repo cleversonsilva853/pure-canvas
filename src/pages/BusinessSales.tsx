@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { useBusinessSales, useCreateBusinessSale, useDeleteBusinessSale, useBusinessProducts } from '@/hooks/useBusinessData';
+import { useBusinessSales, useCreateBusinessSale, useDeleteBusinessSale, useBusinessProducts, useBusinessAccounts } from '@/hooks/useBusinessData';
 import { Plus, Trash2, Search, Filter, Download, FileText, FileSpreadsheet, CalendarIcon } from 'lucide-react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -25,10 +25,11 @@ const fmt = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', c
 const BusinessSales = () => {
   const { data: sales = [], isLoading } = useBusinessSales();
   const { data: products = [] } = useBusinessProducts();
+  const { data: accounts = [] } = useBusinessAccounts();
   const createSale = useCreateBusinessSale();
   const deleteSale = useDeleteBusinessSale();
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ product_id: '', product_name: '', quantity: '1', unit_price: '', date: getTodayInputDate() });
+  const [form, setForm] = useState({ product_id: '', product_name: '', quantity: '1', unit_price: '', date: getTodayInputDate(), account_id: 'avulsa' });
   const [searchTerm, setSearchTerm] = useState('');
   const [filterMonth, setFilterMonth] = useState<string>(String(new Date().getMonth()));
   const [filterYear, setFilterYear] = useState<string>(String(new Date().getFullYear()));
@@ -71,8 +72,9 @@ const BusinessSales = () => {
       unit_price: Number(form.unit_price),
       total_price: totalPrice,
       date: form.date,
+      account_id: form.account_id,
     });
-    setForm({ product_id: '', product_name: '', quantity: '1', unit_price: '', date: getTodayInputDate() });
+    setForm({ product_id: '', product_name: '', quantity: '1', unit_price: '', date: getTodayInputDate(), account_id: 'avulsa' });
     setOpen(false);
   };
 
@@ -149,6 +151,15 @@ const BusinessSales = () => {
                 </Select>
               </div>
               {!form.product_id && <div><Label>Nome do Produto/Serviço</Label><Input required value={form.product_name} onChange={e => setForm(f => ({ ...f, product_name: e.target.value }))} /></div>}
+              <div><Label>Conta para Depósito</Label>
+                <Select value={form.account_id} onValueChange={val => setForm(f => ({ ...f, account_id: val }))}>
+                  <SelectTrigger><SelectValue placeholder="Selecionar conta" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="avulsa">Conta Avulsa (Sem vínculo)</SelectItem>
+                    {accounts.map(acc => <SelectItem key={acc.id} value={acc.id}>{acc.name} - Saldo: {fmt(Number(acc.balance))}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
               <div className="grid grid-cols-2 gap-4">
                 <div><Label>Quantidade</Label><Input required type="number" min="1" value={form.quantity} onChange={e => setForm(f => ({ ...f, quantity: e.target.value }))} /></div>
                 <div><Label>Valor Unitário (R$)</Label><Input required type="number" step="0.01" min="0" value={form.unit_price} onChange={e => setForm(f => ({ ...f, unit_price: e.target.value }))} /></div>
